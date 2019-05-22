@@ -4,8 +4,10 @@
 ## Opensource
 | Opensource | Version |
 |------------|---------|
+| springframework | 4.3.23.RELEASE |
+| springframework security | 4.2.12.RELEASE|
 | architecture-ee | 5.0.5-RELEASE |
-
+| FasterXML | 2.9.9 |
 
 ## Database 
 
