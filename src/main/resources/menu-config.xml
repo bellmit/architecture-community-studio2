@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<MenuConfig>
+	<Menus>
+		<!-- ==================== Admin Menus =========================== -->
+		<Menu name="ADMIN_MENU" title="Administrator Console" description="test" width="50">
+			<Item name="TDLnew" title="NEW">
+				<Item name="TDLnewcase" title="CASE"
+					image="images/case-new.png" location="NewCase.jsp" />
+				<Item name="TDLnewitem" title="ITEM"
+					image="images/item-new.png" location="index.jsp" />
+				<Item name="TDLnewparty" title="PARTY"
+					image="images/party-new.png" location="index.jsp" />
+			</Item>
+			<Item name="TDLopen" title="OPEN">
+				<Item name="TDLopencase" title="CASE"
+					image="images/case-open.png" location="index.jsp" />
+				<Item name="TDLopenitem" title="ITEM"
+					image="images/item-open.png" location="index.jsp" />
+				<Item name="TDLopenparty" title="PARTY"
+					image="images/party-open.png" location="index.jsp" />
+			</Item>
+			<Item name="TDLexit" title="EXIT" image="images/exit.png"
+				location="index.jsp" />
+		</Menu>
+		<!-- ==================== Setup Menus =========================== -->
+		<Menu name="SETUP_MENU" title="SETUP" >
+			<Item name="TDLselect" title="SELECT_ALL"
+				image="images/select-all.png" location="index.jsp" width="100" />
+			<Item name="TDLprefs" title="USER_PREFERENCES"
+				image="images/prefs.png" location="index.jsp" width="150" />
+		</Menu>
+	</Menus>
+</MenuConfig>
