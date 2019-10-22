@@ -22,8 +22,8 @@
 		<project.javadoc.docEncoding>UTF-8</project.javadoc.docEncoding>
 		<project.build.version>1.0.0-RELEASE</project.build.version>
 		<project.dependency.framework.version>5.1.1-RELEASE</project.dependency.framework.version>
-		<project.dependency.spring.version>4.3.2.RELEASE</project.dependency.spring.version>
-		<project.dependency.spring-security.version>4.1.3.RELEASE</project.dependency.spring-security.version>
+		<project.dependency.spring.version>4.3.23.RELEASE</project.dependency.spring.version>
+		<project.dependency.spring-security.version>4.2.12.RELEASE</project.dependency.spring-security.version>
 		<javadocExecutable>${java.home}/../bin/javadoc</javadocExecutable>
 	</properties>
 	
@@ -58,6 +58,11 @@
 			<artifactId>spring-webmvc</artifactId>
 			<version>${project.dependency.spring.version}</version>
 		</dependency> 
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-aspects</artifactId>
+			<version>${project.dependency.spring.version}</version>
+		</dependency> 		
 		<!-- SPRINGFRAMEWORK END -->
 
 		<!-- SPRINGFRAMEWORK.SECURITY START -->
@@ -99,7 +104,14 @@
 		 <version>1.1.0.RELEASE</version>
 		</dependency>
 		<!-- SPRINGFRAMEWORK.MOBILE END -->
-		
+
+		<!-- https://mvnrepository.com/artifact/org.springframework.integration/spring-integration-groovy -->
+		<dependency>
+		    <groupId>org.springframework.integration</groupId>
+		    <artifactId>spring-integration-groovy</artifactId>
+		    <version>4.3.20.RELEASE</version>
+		</dependency>
+				
 		
 		<!-- SERVLET/JSP START -->
 		<dependency>
@@ -114,7 +126,13 @@
 			<version>1.2</version>
 		</dependency>
 		<!-- SERVLET/JSP END -->
-
+		
+		<dependency>
+		    <groupId>com.sun.mail</groupId>
+		    <artifactId>javax.mail</artifactId>
+		    <version>1.5.6</version>
+		</dependency>
+		
 		<!-- JACKSON START -->
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
@@ -127,12 +145,19 @@
 			<artifactId>jackson-annotations</artifactId>
 			<version>2.9.9</version>
 		</dependency>
-		
+				
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-databind</artifactId>
 			<version>2.9.9</version>
 		</dependency>
+
+		<dependency>
+		  <groupId>com.fasterxml.jackson.dataformat</groupId>
+		  <artifactId>jackson-dataformat-xml</artifactId>
+		  <version>2.9.9</version>
+		</dependency>
+		
 		<!-- JACKSON END -->
 				
 		<!-- LOG START -->	
@@ -167,6 +192,24 @@
 			<version>4.12</version>
 			<scope>test</scope>
 		</dependency>		
+
+		<!--  SITEMESH START -->
+		<!-- https://mvnrepository.com/artifact/org.sitemesh/sitemesh -->
+		<dependency>
+		    <groupId>org.sitemesh</groupId>
+		    <artifactId>sitemesh</artifactId>
+		    <version>3.0.1</version>
+		</dependency>
+		<!--  SITEMESH END -->
+
+		<!-- https://mvnrepository.com/artifact/commons-digester/commons-digester -->
+		<!-- menu -->
+		<dependency>
+		    <groupId>commons-digester</groupId>
+		    <artifactId>commons-digester</artifactId>
+		    <version>2.1</version>
+		</dependency>
+
 		
 		<!-- https://mvnrepository.com/artifact/org.apache.commons/commons-lang3 -->
 		<dependency>
@@ -175,6 +218,13 @@
 		    <version>3.0</version>
 		</dependency>
 
+		<!-- https://mvnrepository.com/artifact/commons-fileupload/commons-fileupload -->
+		<dependency>
+		    <groupId>commons-fileupload</groupId>
+		    <artifactId>commons-fileupload</artifactId>
+		    <version>1.4</version>
+		</dependency>
+		
 		
 		<!-- https://mvnrepository.com/artifact/org.apache.poi/poi -->
 		<dependency>
@@ -190,6 +240,14 @@
 		    <version>3.16</version>
 		</dependency>
 
+		<!-- https://mvnrepository.com/artifact/net.sf.ehcache/ehcache -->
+		<dependency>
+		    <groupId>net.sf.ehcache</groupId>
+		    <artifactId>ehcache</artifactId>
+		    <version>2.10.6</version>
+		</dependency>
+
+    
 		<!-- https://mvnrepository.com/artifact/mysql/mysql-connector-java -->
 		<dependency>
 		    <groupId>mysql</groupId>
@@ -203,7 +261,23 @@
 		    <groupId>net.coobird</groupId>
 		    <artifactId>thumbnailator</artifactId>
 		    <version>0.4.8</version>
-		</dependency>						
+		</dependency>
+		
+		<!-- https://mvnrepository.com/artifact/org.apache.pdfbox/pdfbox -->
+		<dependency>
+			<groupId>org.apache.pdfbox</groupId>
+			<artifactId>pdfbox</artifactId>
+			<version>2.0.2</version>
+		</dependency>
+
+		<!-- https://mvnrepository.com/artifact/org.apache.tika/tika-core -->
+		<dependency>
+		    <groupId>org.apache.tika</groupId>
+		    <artifactId>tika-core</artifactId>
+		    <version>1.22</version>
+		</dependency>
+		
+										
 	</dependencies>
 	<build>
 		<plugins>
