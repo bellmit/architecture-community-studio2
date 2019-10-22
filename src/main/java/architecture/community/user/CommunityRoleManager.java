@@ -13,14 +13,20 @@ import javax.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.EnableAspectJAutoProxy;
+import org.springframework.context.event.EventListener;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
+import com.google.common.eventbus.Subscribe;
 
 import architecture.community.user.dao.RoleDao;
+import architecture.community.user.event.UserRemovedEvent;
 
+@EnableAspectJAutoProxy(proxyTargetClass = true)
 public class CommunityRoleManager implements RoleManager {
 
 	private Logger logger = LoggerFactory.getLogger(getClass().getName());
@@ -31,6 +37,17 @@ public class CommunityRoleManager implements RoleManager {
 	
 	private com.google.common.cache.LoadingCache<Long, List<Long>> userRoleIdsCache = null;
 	
+	
+	@Subscribe
+	@EventListener 
+	@Async
+	@Transactional(readOnly = false, propagation = Propagation.REQUIRES_NEW)
+	public void handelUserRemovedEvent(UserRemovedEvent e) {
+		logger.debug("User romoved. Revoke all granted roles for '{}'" , e.getUser().getUsername() );
+		User user = e.getUser();
+		invalidateUserRoleIdsCache(user.getUserId());
+		roleDao.removeUserRoles(user.getUserId());
+	}
 	
 	@PostConstruct
 	public void initialize(){		
@@ -199,4 +216,7 @@ public class CommunityRoleManager implements RoleManager {
 		return caseInsensitiveRoleNameMatch ? name.toUpperCase() : name;
 	}
 
+
+	
+	
 }

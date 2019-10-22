@@ -151,8 +151,9 @@ public class JdbcUserDao extends ExtendedJdbcDaoSupport implements UserDao {
 		UserTemplate template = new UserTemplate(user);
 		if (template.getEmail() == null)
 			throw new IllegalArgumentException(CommunityLogLocalizer.getMessage("010012"));
-		long nextUserId = getNextUserId() ;
-				
+		//long nextUserId = getNextUserId() ;
+		template.setUserId(getNextUserId() );
+		
 		if ("".equals(template.getName()))
 			template.setName(null);
 		
@@ -165,7 +166,7 @@ public class JdbcUserDao extends ExtendedJdbcDaoSupport implements UserDao {
 		try {
 			Date now = new Date();
 			getExtendedJdbcTemplate().update(getBoundSql("COMMUNITY_USER.CREATE_USER").getSql(),
-					new SqlParameterValue(Types.NUMERIC, nextUserId),
+					new SqlParameterValue(Types.NUMERIC, template.getUserId()),
 					new SqlParameterValue(Types.VARCHAR, template.getUsername()),
 					new SqlParameterValue(Types.VARCHAR, template.getPasswordHash()),
 					new SqlParameterValue(Types.VARCHAR, useLastNameFirstName ? template : user.getName()),
@@ -180,6 +181,7 @@ public class JdbcUserDao extends ExtendedJdbcDaoSupport implements UserDao {
 					new SqlParameterValue(Types.TIMESTAMP, template.getCreationDate() != null ? template.getCreationDate() : now ),
 					new SqlParameterValue(Types.TIMESTAMP, template.getModifiedDate() != null ? template.getModifiedDate() : now )
 			);
+			
 		} catch (DataAccessException e) {
 			logger.error(CommunityLogLocalizer.getMessage("010013"), e);
 			throw e;

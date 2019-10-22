@@ -4,9 +4,11 @@ import java.io.File;
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Properties;
 
 import javax.sql.DataSource;
 
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
@@ -15,6 +17,7 @@ import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
+import org.springframework.beans.factory.support.BeanDefinitionReaderUtils;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.GenericBeanDefinition;
 import org.springframework.context.ApplicationContext;
@@ -24,11 +27,13 @@ import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.jdbc.support.DatabaseMetaDataCallback;
 import org.springframework.jdbc.support.JdbcUtils;
 import org.springframework.jdbc.support.MetaDataAccessException;
+import org.springframework.util.ClassUtils;
 
 import architecture.community.admin.menu.MenuComponent;
 import architecture.community.admin.menu.SetupMenuService;
 import architecture.community.i18n.CommunityLogLocalizer;
 import architecture.community.query.dao.CustomQueryJdbcDao;
+import architecture.community.services.mail.MailServicesConfig;
 import architecture.community.user.MultiUserManager;
 import architecture.community.user.UserProvider;
 import architecture.ee.component.editor.DataSourceEditor;
@@ -64,6 +69,13 @@ public class CommunityAdminService implements ApplicationContextAware , Manageme
 	@Autowired(required = false)
 	private ApplicationEventPublisher applicationEventPublisher;
 	
+
+	public CommunityAdminService() {  
+		
+	} 
+	
+	
+	
 	
 	private boolean isSetMenuService() {
 		return menuService != null;
@@ -80,10 +92,6 @@ public class CommunityAdminService implements ApplicationContextAware , Manageme
 	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
 		this.applicationContext = applicationContext;
 	}
-
-	public CommunityAdminService() {  
-		
-	} 
 	
 	private void autowire(Object bean) {
 		applicationContext.getAutowireCapableBeanFactory().autowireBean(bean);
@@ -124,6 +132,8 @@ public class CommunityAdminService implements ApplicationContextAware , Manageme
 	}
 
 	
+	
+	
 	/**
 	 * 인자로 전달된 데이터소스로 사용자정의 쿼리 서비스를 생성한다.
 	 * 
@@ -142,21 +152,34 @@ public class CommunityAdminService implements ApplicationContextAware , Manageme
 		} 
 	}  
 	
-	public boolean isExistAndCreateIfNotExist(String exportName ) { 
-		logger.debug("Checking context contain bean ({}): {}", exportName , applicationContext.containsBeanDefinition(exportName));
-		if( !applicationContext.containsBeanDefinition(exportName) ) { 
-			String key = String.format( "database.%s" , exportName ); 
+	
+	
+	
+	/**
+	 * dataSourceName 에 해당하는 데이터소스가 없는 경우 생성한다.
+	 * 성성을 위해서는 반듯이 startup-config.xml d에 정의되어 있어야 한다.
+	 * 
+	 * @param dataSourceName
+	 * @return
+	 */
+	public boolean isExistAndCreateIfNotExist(String dataSourceName ) { 
+		logger.debug("Checking context contain bean ({}): {}", dataSourceName , applicationContext.containsBeanDefinition(dataSourceName));
+		if( !applicationContext.containsBeanDefinition(dataSourceName) ) { 
+			String key = String.format( "database.%s" , dataSourceName ); 
 			for( String name : repository.getSetupApplicationProperties().getChildrenNames(key)) {
 				if( name.equals("pooledDataSourceProvider")) {
 					PooledDataSourceConfig config = new PooledDataSourceConfig();
-					config.setExportName(exportName);
+					config.setExportName(dataSourceName);
 					registerDataSourceBean(config);
 				}
 			} 
 			return false;
 		}
 		return true; 
-	}
+	} 
+	
+	// EDITING MAILSENDER SETTING.
+	
 	
 	
 	
@@ -207,6 +230,10 @@ public class CommunityAdminService implements ApplicationContextAware , Manageme
 			applicationEventPublisher.publishEvent(new PropertiesRefreshedEvent(this, "startup"));
 	}  
 	
+	public void addMailSender (MailServicesConfig config) {
+		registerMailSenderBean( config , true );
+	}
+	
 	protected void registerDataSourceBean(PooledDataSourceConfig dataSource) {
 		DataSourceFactoryBean bean = new DataSourceFactoryBean();
 		bean.setProfileName(dataSource.getExportName()); 
@@ -222,4 +249,68 @@ public class CommunityAdminService implements ApplicationContextAware , Manageme
 		myBeanDefinition.setPropertyValues(mutablePropertyValues);
 		registry.registerBeanDefinition(dataSource.getExportName(), myBeanDefinition); 
 	}
+	
+	protected void registerMailSenderBean(MailServicesConfig config, boolean overwriteIfExist) { 
+		AutowireCapableBeanFactory factory =  applicationContext.getAutowireCapableBeanFactory();
+		BeanDefinitionRegistry registry = (BeanDefinitionRegistry) factory; 
+		
+		if(overwriteIfExist && StringUtils.isNotBlank(config.getBeanName()) && registry.containsBeanDefinition( config.getBeanName() )) {
+			registry.removeBeanDefinition(config.getBeanName());
+		} 
+		
+		GenericBeanDefinition myBeanDefinition = new GenericBeanDefinition();
+		myBeanDefinition.setBeanClass(org.springframework.mail.javamail.JavaMailSenderImpl.class);
+		myBeanDefinition.setBeanClassName(org.springframework.mail.javamail.JavaMailSenderImpl.class.getName());
+		MutablePropertyValues mutablePropertyValues = new MutablePropertyValues();
+		if(StringUtils.isNotBlank( config.getUsername() )) {
+			mutablePropertyValues.add("username", config.getUsername());
+		}
+		if(StringUtils.isNotBlank( config.getPassword() )) {
+			mutablePropertyValues.add("password", config.getPassword());
+		}
+		if(StringUtils.isNotBlank( config.getHost() )) {
+			mutablePropertyValues.add("host", config.getHost());
+		}
+		if(StringUtils.isNotBlank( config.getDefaultEncoding())) {
+			mutablePropertyValues.add("defaultEncoding", config.getDefaultEncoding());
+		}
+		if(StringUtils.isNotBlank( config.getProtocol() )) {
+			mutablePropertyValues.add("protocol", config.getProtocol());
+		}
+		if(config.getPort() > 0) {
+			mutablePropertyValues.add("port", config.getPort());
+		} 
+		
+		Properties properties = new Properties();
+		properties.putAll(config.getProperties());
+		mutablePropertyValues.addPropertyValue("javaMailProperties", properties);
+		myBeanDefinition.setPropertyValues(mutablePropertyValues);
+		
+		String beanName = BeanDefinitionReaderUtils.registerWithGeneratedName(myBeanDefinition, registry);
+		config.setBeanName(beanName);
+		
+	}
+	
+	public <T> T getComponent(String requiredName, Class<T> requiredType) {
+		
+		if (applicationContext == null) {
+			throw new IllegalStateException(CommunityLogLocalizer.getMessage("012005"));
+		}		
+		
+		if (requiredType == null) {
+			throw new IllegalArgumentException(CommunityLogLocalizer.getMessage("012001"));
+		}
+		
+		try {
+			if( StringUtils.isNotBlank(requiredName) ){
+				return applicationContext.getBean(requiredName, requiredType);
+			}else {
+				return applicationContext.getBean(requiredType);
+			}
+		} catch (NoSuchBeanDefinitionException e) {
+			throw new ComponentNotFoundException(CommunityLogLocalizer.format("012004", requiredName, requiredType.getName() ), e);
+		}
+	}
+	
+	
 }

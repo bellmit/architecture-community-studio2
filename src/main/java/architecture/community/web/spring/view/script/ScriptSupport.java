@@ -11,7 +11,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpInputMessage;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.http.server.ServletServerHttpRequest;
-import org.springframework.ui.Model;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 
 import architecture.community.page.Page;
@@ -53,7 +52,7 @@ public abstract class ScriptSupport {
 	} 
 	
 	protected DataSourceRequest getDataSourceRequest(HttpServletRequest request) {
-		return getRequestBodyObject (DataSourceRequest.class, request );
+		return getRequestBodyObject(DataSourceRequest.class, request );
 	}
 	
 	@SuppressWarnings("unchecked")

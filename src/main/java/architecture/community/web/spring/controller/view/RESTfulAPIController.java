@@ -32,12 +32,13 @@ import architecture.community.page.api.Api;
 import architecture.community.page.api.ApiService;
 import architecture.community.query.CustomQueryService;
 import architecture.community.security.spring.acls.CommunityAclService;
-import architecture.community.security.spring.acls.JdbcCommunityAclService.PermissionsBundle;
+import architecture.community.security.spring.acls.PermissionsBundle;
 import architecture.community.services.CommunityGroovyService;
 import architecture.community.util.SecurityHelper;
 import architecture.community.viewcount.ViewCountService;
 import architecture.community.web.model.Result;
 import architecture.community.web.spring.view.script.DataView;
+import architecture.community.web.util.ServletUtils;
 import architecture.ee.service.ConfigService;
 /**
  * 
@@ -111,10 +112,12 @@ public class RESTfulAPIController {
 		model.addAttribute("__page", api );
 		
 		if(StringUtils.isNotEmpty(api.getScriptSource())) { 
-			
 			Stopwatch stopwatch = Stopwatch.createStarted(); 
-			try {
-				DataView _view = communityGroovyService.getService(api.getScriptSource(), DataView.class);
+			try { 
+				DataView _view = communityGroovyService.getService(api.getScriptSource(), DataView.class); 
+				log.debug("set content type : {}", api.getContentType () );
+				if(StringUtils.isNotEmpty(api.getContentType()))
+					ServletUtils.setContentType(api.getContentType(), response);
 				return _view.handle(model.asMap(), request, response);
 			} catch (Exception e) { 
 				//result.setError(e);
@@ -138,7 +141,7 @@ public class RESTfulAPIController {
 	 * 
 	 */
 	@RequestMapping(value = "/*/**", method = { RequestMethod.POST, RequestMethod.GET })
-    public Object apiBypattern (
+    public Object apiByPattern (
     	@RequestParam(value = "version", defaultValue = "1", required = false) int version,
     	@RequestParam(value = "preview", defaultValue = "false", required = false) boolean preview,
     	HttpServletRequest request, 
@@ -187,6 +190,8 @@ public class RESTfulAPIController {
 	 				if(StringUtils.isNotEmpty(page.getScriptSource())) {
 	 					DataView _view = communityGroovyService.getService(page.getScriptSource(), DataView.class);
 	 					try {
+	 						if(StringUtils.isNotEmpty(page.getContentType()))
+	 							ServletUtils.setContentType(page.getContentType(), response);
 	 						return _view.handle(model.asMap(), request, response);
 						} catch (Exception e) { 
 							log.error("Error process data ..", e);

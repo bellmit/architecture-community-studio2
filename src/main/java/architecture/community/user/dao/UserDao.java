@@ -28,7 +28,6 @@ public interface UserDao {
 	
 	public abstract List<Long> findUserIds(String nameOrEmail, int startIndex, int numResults) ;
 	
-	
     public abstract int getUserCount();
 
     public abstract List<Long> getUserIds();

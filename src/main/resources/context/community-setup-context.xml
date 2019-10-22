@@ -23,6 +23,7 @@
 	
 	<!-- Menu for SETUP, STUDIO  -->
 	<beans:bean id="admin.menuService" class="architecture.community.admin.menu.SetupMenuService"/>
+	
 	<beans:bean id="admin.managementService" class="architecture.community.services.CommunityManagementService"/>
 	
 </beans:beans> 

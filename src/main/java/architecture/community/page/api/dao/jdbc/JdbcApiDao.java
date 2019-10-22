@@ -32,8 +32,8 @@ public class JdbcApiDao extends ExtendedJdbcDaoSupport implements ApiDao  {
 			Api api = new Api(rs.getInt("OBJECT_TYPE"), rs.getLong("OBJECT_ID"), rs.getLong("API_ID"));	
 			api.setTitle(rs.getString("TITLE"));
 			api.setPattern(rs.getString("PATTERN"));
-			api.setApiName(rs.getString("API_NAME"));
-			api.setApiVersion(rs.getString("API_VERSION"));
+			api.setName(rs.getString("API_NAME"));
+			api.setVersion(rs.getString("API_VERSION"));
 			api.setDescription(rs.getString("DESCRIPTION"));
 			api.setContentType(rs.getString("CONTENT_TYPE"));
 			api.setScriptSource(rs.getString("SCRIPT"));
@@ -41,8 +41,7 @@ public class JdbcApiDao extends ExtendedJdbcDaoSupport implements ApiDao  {
 			api.setEnabled(rs.getInt("ENABLED") == 1);
 			api.setCreator(new UserTemplate(rs.getLong("CREATOR_ID")));
 			api.setCreationDate(rs.getDate("CREATION_DATE"));
-			api.setModifiedDate(rs.getDate("MODIFIED_DATE"));		
-			
+			api.setModifiedDate(rs.getDate("MODIFIED_DATE")); 
 			return api;
 		}		
 	};
@@ -89,13 +88,13 @@ public class JdbcApiDao extends ExtendedJdbcDaoSupport implements ApiDao  {
 		Api toUse = api;
 		if (toUse.getApiId() < 1L) {
 			toUse.setApiId(getNextApiId());		
-			getExtendedJdbcTemplate().update(getBoundSql("COMMUNITY_UI.INSERT_API").getSql(),
+			getExtendedJdbcTemplate().update(getBoundSql("COMMUNITY_PAGE.INSERT_API").getSql(),
 					new SqlParameterValue(Types.NUMERIC, toUse.getObjectType()),
 					new SqlParameterValue(Types.NUMERIC, toUse.getObjectId()),					
 					new SqlParameterValue(Types.NUMERIC, toUse.getApiId()),
 					new SqlParameterValue(Types.VARCHAR, toUse.getTitle()),
-					new SqlParameterValue(Types.VARCHAR, toUse.getApiName()),
-					new SqlParameterValue(Types.VARCHAR, toUse.getApiVersion()),
+					new SqlParameterValue(Types.VARCHAR, toUse.getName()),
+					new SqlParameterValue(Types.VARCHAR, toUse.getVersion()),
 					new SqlParameterValue(Types.VARCHAR, toUse.getDescription()),
 					new SqlParameterValue(Types.VARCHAR, toUse.getContentType()),
 					new SqlParameterValue(Types.VARCHAR, toUse.getScriptSource()),		
@@ -109,10 +108,10 @@ public class JdbcApiDao extends ExtendedJdbcDaoSupport implements ApiDao  {
 		} else {
 			Date now = Calendar.getInstance().getTime();
 			toUse.setModifiedDate(now);		
-			getExtendedJdbcTemplate().update(getBoundSql("COMMUNITY_UI.UPDATE_API").getSql(),
+			getExtendedJdbcTemplate().update(getBoundSql("COMMUNITY_PAGE.UPDATE_API").getSql(),
 					new SqlParameterValue(Types.VARCHAR, toUse.getTitle()),
-					new SqlParameterValue(Types.VARCHAR, toUse.getApiName()),
-					new SqlParameterValue(Types.VARCHAR, toUse.getApiVersion()),
+					new SqlParameterValue(Types.VARCHAR, toUse.getName()),
+					new SqlParameterValue(Types.VARCHAR, toUse.getVersion()),
 					new SqlParameterValue(Types.VARCHAR, toUse.getDescription()),
 					new SqlParameterValue(Types.VARCHAR, toUse.getContentType()),
 					new SqlParameterValue(Types.VARCHAR, toUse.getScriptSource()),
@@ -128,14 +127,14 @@ public class JdbcApiDao extends ExtendedJdbcDaoSupport implements ApiDao  {
  
 	public Long getApiIdByName(String name) { 
 		Long id = -1L;
-		id = getExtendedJdbcTemplate().queryForObject(getBoundSql("COMMUNITY_UI.SELECT_API_ID_BY_NAME").getSql(), Long.class, new SqlParameterValue(Types.VARCHAR, name ) );
+		id = getExtendedJdbcTemplate().queryForObject(getBoundSql("COMMUNITY_PAGE.SELECT_API_ID_BY_NAME").getSql(), Long.class, new SqlParameterValue(Types.VARCHAR, name ) );
 		return id;
 	}
  
 	public Api getApiById(long apiId) {
 		try {
 			Api api = getExtendedJdbcTemplate().queryForObject(
-				getBoundSql("COMMUNITY_UI.SELECT_API_BY_ID").getSql(),
+				getBoundSql("COMMUNITY_PAGE.SELECT_API_BY_ID").getSql(),
 				apiMapper,
 				new SqlParameterValue(Types.NUMERIC, apiId));
 			
@@ -151,7 +150,7 @@ public class JdbcApiDao extends ExtendedJdbcDaoSupport implements ApiDao  {
 	@Override
 	public void deleteApi(Api api) {
 		Api toUse = api;
-		getExtendedJdbcTemplate().update(getBoundSql("COMMUNITY_UI.DELETE_API_BY_ID").getSql(), 
+		getExtendedJdbcTemplate().update(getBoundSql("COMMUNITY_PAGE.DELETE_API_BY_ID").getSql(), 
 				new SqlParameterValue(Types.NUMERIC, toUse.getApiId())
 		);
 	}
@@ -159,7 +158,7 @@ public class JdbcApiDao extends ExtendedJdbcDaoSupport implements ApiDao  {
 	@Override
 	public List<Api> getAllApiHasPatterns() {
 		return getExtendedJdbcTemplate().query(
-				getBoundSql("COMMUNITY_UI.SELECT_ALL_API_PATTERN_AND_ID").getSql(),
+				getBoundSql("COMMUNITY_PAGE.SELECT_ALL_API_PATTERN_AND_ID").getSql(),
 				new RowMapper<Api>() {
 					public Api mapRow(ResultSet rs, int rowNum) throws SQLException {
 						Api page = new Api(rs.getLong(1));

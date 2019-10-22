@@ -80,7 +80,9 @@ public class PageMaker {
 	
 	protected SimpleHash buildTemplateModel(Map<String, Object> model, ObjectWrapper wrapper, HttpServletRequest request, HttpServletResponse response) {				
 		AllHttpScopesHashModel fmModel = new AllHttpScopesHashModel(wrapper, getServletContext(), request);
-		//fmModel.put(FreemarkerServlet.KEY_JSP_TAGLIBS, this.taglibFactory);		
+		
+		//fmModel.put(FreemarkerServlet.KEY_JSP_TAGLIBS, this.taglibFactory);
+		
 		fmModel.put(FreemarkerServlet.KEY_APPLICATION, buildServletContextHashModel(wrapper, null));
 		fmModel.put(FreemarkerServlet.KEY_SESSION, buildSessionModel(wrapper, request, response));
 		fmModel.put(FreemarkerServlet.KEY_REQUEST, new HttpRequestHashModel(request, response, wrapper));
@@ -138,8 +140,7 @@ public class PageMaker {
 	 * Internal implementation of the {@link ServletConfig} interface,
 	 * to be passed to the servlet adapter.
 	 */
-	private class DelegatingServletConfig implements ServletConfig {
-
+	private class DelegatingServletConfig implements ServletConfig { 
 		@Override
 		public String getServletName() {
 			return "PageMaker";

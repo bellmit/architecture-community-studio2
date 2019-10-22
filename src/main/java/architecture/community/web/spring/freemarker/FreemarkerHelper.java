@@ -7,8 +7,7 @@ import freemarker.template.TemplateHashModel;
 import freemarker.template.TemplateModelException;
 
 public class FreemarkerHelper {
-	
-	
+	 
 	public static void populateStatics(BeansWrapper wrapper, Map<String, Object> model) {
 		try {
 			TemplateHashModel enumModels = wrapper.getEnumModels();

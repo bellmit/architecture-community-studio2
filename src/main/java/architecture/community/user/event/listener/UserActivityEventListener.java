@@ -7,6 +7,8 @@ import javax.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.event.EventListener;
+import org.springframework.scheduling.annotation.Async;
 
 import com.google.common.eventbus.Subscribe;
 
@@ -38,6 +40,8 @@ public class UserActivityEventListener {
 	}
 	
 	@Subscribe 
+	@EventListener 
+	@Async
 	public void handelUserActivityEvent(UserActivityEvent e) {
 		logger.debug("USER : {}, ACTIVITY:{}" , e.getUser().getUsername(), e.getActivity().name() );
 	}

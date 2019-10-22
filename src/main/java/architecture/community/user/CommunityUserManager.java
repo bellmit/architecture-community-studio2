@@ -97,6 +97,7 @@ public class CommunityUserManager extends EventSupport implements UserManager, M
 			if (user == null) {
 				log.debug( CommunityLogLocalizer.format("010019", template.getUserId() ) );
 				try {
+					log.debug("Find user by ID {}.", template.getUserId() );
 					user = userDao.getUserById(template.getUserId());
 					updateCaches(user);
 				} catch (Throwable e) {
@@ -105,11 +106,9 @@ public class CommunityUserManager extends EventSupport implements UserManager, M
 			}
 		} 
 		
-		if (user == null && !StringUtils.isNullOrEmpty(template.getUsername())) {
-			
+		if (user == null && !StringUtils.isNullOrEmpty(template.getUsername())) { 
 			String nameToUse = template.getUsername();
-			long userIdToUse = getUserIdInCache(nameToUse); 
-			
+			long userIdToUse = getUserIdInCache(nameToUse);  
 			if (userIdToUse > 0L) { 
 				log.debug( CommunityLogLocalizer.format("010020", nameToUse, userIdToUse) );
 				user = getUserInCache(userIdToUse);
@@ -119,6 +118,7 @@ public class CommunityUserManager extends EventSupport implements UserManager, M
 					nameToUse = nameToUse.toUpperCase();
 				}
 				try {
+					log.debug("Find user by username {}.", nameToUse );
 					user = userDao.getUserByUsername(nameToUse);
 					updateCaches(user);
 				} catch (Throwable e) {
@@ -129,6 +129,7 @@ public class CommunityUserManager extends EventSupport implements UserManager, M
 
 		if (null == user && !StringUtils.isNullOrEmpty(template.getEmail())) {
 			try {
+				log.debug("Find user by email {}.", template.getEmail() );
 				user = userDao.getUserByEmail(template.getEmail());
 				updateCaches(user);
 			} catch (Exception ex) {
@@ -171,12 +172,16 @@ public class CommunityUserManager extends EventSupport implements UserManager, M
 		return user;
 	}
 	
+	/**
+	 * return user provider .
+	 * @param user
+	 * @return
+	 */
 	protected UserProvider getUserProvider(User user) { 
 		
 		if( providers.size() == 0) {
 			return null;
 		}
-		
 		String providerName = null;
 		if( userProviderCache.get(user.getUserId()) != null) {
 			providerName = (String)userProviderCache.get(user.getUserId()).getObjectValue();
@@ -222,6 +227,8 @@ public class CommunityUserManager extends EventSupport implements UserManager, M
 		validateProviderUser(sourceUser);
 		
 		if( sourceUser != null ) {
+			// if provider does not support hashed password.
+			// return random number (64) bytes ...
 			if( StringUtils.isNullOrEmpty( sourceUser.getPasswordHash() ) ) { 
 				UserTemplate sourceUserWithPassword = new UserTemplate(sourceUser);
 				byte buffer [] = new byte[64];
@@ -229,7 +236,7 @@ public class CommunityUserManager extends EventSupport implements UserManager, M
 				sourceUserWithPassword.setPasswordHash( new String(buffer) );
 				sourceUser = sourceUserWithPassword;
 			} 
-			
+			// application does not have ... then create new one.
 			User appUser = userDao.getUserByUsername(sourceUser.getUsername());
 			if( appUser == null) {
 				// create user ...
@@ -242,7 +249,7 @@ public class CommunityUserManager extends EventSupport implements UserManager, M
 	}
 	
 	protected void validateProviderUser(User user) {
-		log.debug("validate provided user : {}", user);
+		log.debug("validate '{}' from external provider.", user);
 		if( StringUtils.isNullOrEmpty(user.getName()))
 			throw new InvalidProviderUserException("");
 		if( StringUtils.isNullOrEmpty(user.getEmail()))
@@ -252,6 +259,7 @@ public class CommunityUserManager extends EventSupport implements UserManager, M
 	}
 	
 	
+	@Transactional(readOnly = false, propagation = Propagation.REQUIRES_NEW)
 	public User createApplicationUser(User newUser) throws UserAlreadyExistsException {
 		
 		User user = getUser(newUser); 
@@ -265,17 +273,21 @@ public class CommunityUserManager extends EventSupport implements UserManager, M
 			byte buffer [] = new byte[64];
 			secureRandom.nextBytes(buffer);
 			userTemplate.setPassword( new String(buffer) );
+			log.debug("passord word set for external user {}".concat( userTemplate.getPassword() ));
 		}
+		
 		// userTemplate.setPassword(newUser.getPassword());
 		userTemplate.setPasswordHash(getPasswordHash(newUser));
 		userTemplate.setEmail(caseEmailAddress(newUser));
+		
 		setTemplateDates(userTemplate); 
+		
 		user = userDao.createUser(userTemplate); 
 		userTemplate = new UserTemplate(user);
 		userTemplate.setPassword(null);
+		
 		updateCaches(userTemplate); 
 		return userTemplate;
-		
 	}
 	
 
@@ -283,6 +295,7 @@ public class CommunityUserManager extends EventSupport implements UserManager, M
 	public User createUser(User newUser) throws UserAlreadyExistsException, EmailAlreadyExistsException { 
 		if(!allowApplicationUserCreation)
 			throw new UnsupportedOperationException(CommunityLogLocalizer.format("010022", allowApplicationUserCreation )); 
+		
 		User user = getUser(newUser); 
 		if (null != user) {
 			if (!user.getUsername().equals(newUser.getUsername())) {
@@ -296,8 +309,10 @@ public class CommunityUserManager extends EventSupport implements UserManager, M
 				throw e;
 			}
 		} 
+		
 		UserTemplate userTemplate = new UserTemplate(newUser); 
 		if( user.isExternal() ) {
+			
 		}
 		
 		userTemplate.setPassword(newUser.getPassword());
@@ -323,11 +338,11 @@ public class CommunityUserManager extends EventSupport implements UserManager, M
 
 	@Transactional(readOnly = false, propagation = Propagation.REQUIRES_NEW)
 	public void deleteUser(User user) throws UserNotFoundException {
-		User existUser = getUser(user);
-		
+		User existUser = getUser(user); 
+		log.debug("Checing provider for {}", existUser.getUsername());
 		UserProvider up = getUserProvider(existUser);
 		try {
-			if( up != null)
+			if( up != null && up.supportsUpdate() )
 			{
 				log.debug("deleting user with provider '{}'.", up);
 				up.delete(existUser);
@@ -337,19 +352,24 @@ public class CommunityUserManager extends EventSupport implements UserManager, M
 			log.warn("deleting to user with provider '{}' failed. local user will removed...", up );
 		}
 		
-		
 		try {
 			userDao.deleteUser(existUser);
-			evictCaches(user);
-			fireEvent(new UserRemovedEvent(this, user));
+			evictCaches(existUser); 
+			UserRemovedEvent event = new UserRemovedEvent(this, existUser);
+			fireEvent(event);
 		} catch (DataAccessException ex) {
 			String message = CommunityLogLocalizer.format("010016", user);
 			log.error(message, ex);
 			throw ex;
 		}
-
 	}
 
+	@Transactional(readOnly = false, propagation = Propagation.REQUIRES_NEW)
+	public void deleteUsers(List<User> users) throws UserNotFoundException {
+		for( User u: users )
+			deleteUser(u);
+	}
+	
 	protected void evictCaches(User user) {
 		userCache.remove(Long.valueOf(user.getUserId()));
 		userIdCache.remove(user.getUsername());
@@ -364,18 +384,13 @@ public class CommunityUserManager extends EventSupport implements UserManager, M
 
 	protected void updateCaches(User user) {
 		if (user != null) {
-			
 			log.debug(  CommunityLogLocalizer.format("010021", user.getUsername(), user.getUserId()) );
-			if (user.getUserId() > 0 && !StringUtils.isNullOrEmpty(user.getUsername())) {
-				
+			if (user.getUserId() > 0 && !StringUtils.isNullOrEmpty(user.getUsername())) { 
 				if(userIdCache.get(user.getUsername()) != null)
 					userIdCache.remove(user.getUsername());
-				
 				userIdCache.put( new Element( user.getUsername(), user.getUserId() ) );
-				
 				if(userCache.get(user.getUserId()) != null)
 					userCache.remove(user.getUserId());				
-				
 				userCache.put( new Element(user.getUserId(), user) );
 			}
 		}
@@ -454,8 +469,7 @@ public class CommunityUserManager extends EventSupport implements UserManager, M
 			}
 		return users;
 	}
-
-	@Override
+ 
 	public List<User> getUsers(int startIndex, int numResults) {
 		List<Long> ids = userDao.getUserIds(startIndex, numResults);
 		List<User> users = new ArrayList<User>(ids.size());
@@ -474,12 +488,12 @@ public class CommunityUserManager extends EventSupport implements UserManager, M
 		UserTemplate userToUse = new UserTemplate(getUser(user));
 		
 		if (null == userToUse) {
-			throw new UserNotFoundException();
+			throw new UserNotFoundException("User not found.");
 		}
 		
-
 		String previousUsername = null;
-		if (!userToUse.getUsername().equals(user.getUsername())) {
+		
+		if (! userToUse.getUsername().equals(user.getUsername())) {
 			log.debug("previous username is {}. new username is {}." , userToUse.getUsername() , user.getUsername());
 			previousUsername = userToUse.getUsername();
 			UserTemplate toCheck = new UserTemplate();
@@ -507,29 +521,28 @@ public class CommunityUserManager extends EventSupport implements UserManager, M
 			userToUse.setPasswordHash(getPasswordHash(user));	
 		}else {
 			userToUse.setPasswordHash(userToUse.getPassword());
-		}		
+		}
 		wireTemplateDates(userToUse);
-		
-		
+		log.debug("is this from external providers ?");
 		UserProvider up = getUserProvider(userToUse);
 		try {
+			if( up != null && !up.supportsUpdate()) {
+				log.debug("this provider does not support update.");
+			} 
 			if( up != null && up.supportsUpdate())
 			{
 				log.debug("attempting to update user with provider '{}'.", up);
 				up.update(userToUse);
-			}
+			} 
 		}catch(Exception e) {
 			log.warn("Error attempting to update user with provider '{}'. local user will updated with inconsistent state.", up );
 		}
 		try {
-			
 			userDao.updateUser(userToUse); 
 			// cache 수정 ..
-			
 			userCache.remove(userToUse.getUserId());
 			if (previousUsername != null)
 				userIdCache.remove(previousUsername);
-			
 			/**
 			userCache.put(new Element(userToUse.getUserId(), userToUse));
 			if (previousUsername != null)
@@ -539,9 +552,11 @@ public class CommunityUserManager extends EventSupport implements UserManager, M
 		} catch (DataAccessException ex) { 
 			throw ex;
 		}
-		
 	}
 	
+	public void disableUser(User user) {
+		
+	}
 	
 	public boolean verifyPassword(User user, String password) {
 		if( user.getPassword() == null || StringUtils.isNullOrEmpty(password))
@@ -549,6 +564,11 @@ public class CommunityUserManager extends EventSupport implements UserManager, M
 		return passwordEncoder.matches(password, user.getPassword());
 	}	
 
+	/**
+	 * encode password.
+	 * @param user
+	 * @return
+	 */
 	private String getPasswordHash(User user) {
 		String passwd;
 		passwd = user.getPassword();
@@ -561,6 +581,7 @@ public class CommunityUserManager extends EventSupport implements UserManager, M
 		}
 		return null;
 	}
+	
 	private void wireTemplateDates(UserTemplate ut) {
 		if (null == ut)
 			return;
@@ -569,4 +590,5 @@ public class CommunityUserManager extends EventSupport implements UserManager, M
 		if (null == ut.getModifiedDate())
 			ut.setModifiedDate(new Date());
 	}
+	
 }

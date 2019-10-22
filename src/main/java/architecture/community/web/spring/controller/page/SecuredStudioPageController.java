@@ -17,13 +17,15 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.servlet.HandlerMapping;
 
 import architecture.community.exception.NotFoundException;
+import architecture.community.page.DefaultPage;
+import architecture.community.security.spring.userdetails.SystemUser;
 import architecture.community.web.util.ServletUtils;
 import architecture.ee.service.ConfigService;
 
 /**
  * 
  * Studio Page Controller ..
- * Only Access allowed to "ROLE_ADMINISTRATOR" , "ROLE_DEVELOPER"
+ * Only Access allowed to "ROLE_ADMINISTRATOR" , "ROLE_SYSTEM",  "ROLE_DEVELOPER"
  * 
  * 
  * 
@@ -52,6 +54,7 @@ public class SecuredStudioPageController {
 	    Model model) throws NotFoundException, IOException {	
 		String view = "/studio/index";
 		ServletUtils.setContentType(ServletUtils.DEFAULT_HTML_CONTENT_TYPE, response);	 
+		setPage( model, view );
 		return view;
     }
 	
@@ -65,7 +68,15 @@ public class SecuredStudioPageController {
 		String restOfTheUrl = (String) request.getAttribute(HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE);		
 		String lcStr = restOfTheUrl.substring(8).toLowerCase(); 
 		log.debug("view {} > {} .", restOfTheUrl, lcStr );
+		setPage( model, lcStr );
 		return lcStr;
-    }
+    } 
 	
+	private void setPage (Model model, String template) { 
+		DefaultPage page = new DefaultPage();
+		SystemUser user = new SystemUser();
+		page.setUser(user);
+		page.setTemplate(template);
+		model.addAttribute("__page", page); 
+	}
 }

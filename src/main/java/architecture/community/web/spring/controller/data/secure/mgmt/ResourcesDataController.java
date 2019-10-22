@@ -11,8 +11,6 @@ import javax.servlet.ServletContext;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOCase;
-import org.apache.commons.io.filefilter.DirectoryFileFilter;
-import org.apache.commons.io.filefilter.SuffixFileFilter;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,7 +47,7 @@ import architecture.ee.service.Repository;
 @Controller("community-mgmt-resources-secure-data-controller")
 @RequestMapping("/data/secure/mgmt")
 public class ResourcesDataController {
-
+	
 	private Logger log = LoggerFactory.getLogger(getClass());
 
 	private static final String[] FILE_EXTENSIONS = new String [] {".ftl", ".jsp", ".xml", ".html", ".groovy"} ;
@@ -65,9 +63,23 @@ public class ResourcesDataController {
 	@Qualifier("repository")
 	private Repository repository;
 
+	@Autowired
+	private ResourceLoader loader ;
+	
 	public ResourcesDataController() {
 		
-	} 
+	}  
+	
+	protected ResourceLoader getResourceLoader () {
+		if( loader == null )
+			loader = new ServletContextResourceLoader(servletContext);
+		return loader;
+	}
+	
+	
+	private ResourceType getResourceType(String name ) {
+		return ResourceType.valueOf(name.toUpperCase());
+	}
 	
 	@Secured({ "ROLE_ADMINISTRATOR", "ROLE_SYSTEM", "ROLE_DEVELOPER"})
 	@RequestMapping(value = "/resources/{type}/list.json", method = { RequestMethod.POST, RequestMethod.GET })
@@ -82,15 +94,11 @@ public class ResourcesDataController {
 		log.debug("get resources by type '{}' ({})", type,  path);
 		if (!isValid(type)) {
 			throw new IllegalArgumentException();
-		}
-		
-		//String pathByType = getResourcePathByType(type.toLowerCase());
-		//log.debug( "searching path in {}" , pathByType );
-		Resource root = getResourceByType(type.toLowerCase()); 
-		// Resource root = getResourceLoader().getResource(getResourcePathByType(type.toLowerCase())); 
-		List<FileInfo> list = new ArrayList<FileInfo>(); 
-		
-		log.debug("selected resource root : {}", root );
+		} 
+		ResourceType resourceType = getResourceType(type);
+		Resource root = getResourceByType( resourceType , null); 
+		List<FileInfo> list = new ArrayList<FileInfo>();  
+		log.debug("selected resources : {}", root );
 		try { 
 			File fileToUse = root.getFile(); 
 			if (StringUtils.isEmpty(path)) { 
@@ -128,16 +136,17 @@ public class ResourcesDataController {
 	@Secured({ "ROLE_ADMINISTRATOR", "ROLE_SYSTEM", "ROLE_DEVELOPER"})
 	@RequestMapping(value = "/resources/{type}/get.json", method = { RequestMethod.POST, RequestMethod.GET })
     @ResponseBody
-    public FileInfo getContent(@PathVariable String type, @RequestParam(value = "path", defaultValue = "", required = false) String path, NativeWebRequest request) throws NotFoundException, IOException {  
-		File targetFile = getResourceLoader().getResource(getResourcePathByType(type.toLowerCase()) + path).getFile();
+    public FileInfo getContent(
+    		@PathVariable String type, 
+    		@RequestParam(value = "path", defaultValue = "", required = false) String path, 
+    		NativeWebRequest request) throws NotFoundException, IOException {  
+		
+		ResourceType resourceType = getResourceType(type);
+		File targetFile = getResourceByType(resourceType, path).getFile();
 		FileInfo fileInfo = new FileInfo(targetFile); 
 		fileInfo.setFileContent(targetFile.isDirectory() ? "" : FileUtils.readFileToString(targetFile, "UTF-8")); 
 		return fileInfo;
     } 
-	
-	
-	
-	
 	/**
 	 * 파일 내용을 업데이트 한다. 동일경로에 파일이름 + .[yyyyMMddHHmmss] 형식으로 백업을 생성한 다음 저장한다.
 	 * 
@@ -153,63 +162,56 @@ public class ResourcesDataController {
     @ResponseBody
     public FileInfo saveOrUpdate(
     		@PathVariable String type, 
+    		@RequestParam(value = "backup", defaultValue = "true", required = false) Boolean backup, 
     		@RequestBody FileInfo file, 
     		NativeWebRequest request) throws NotFoundException, IOException {  
 		
-		File target = getResourceLoader().getResource(getResourcePathByType(type.toLowerCase()) + file.path ).getFile();
-		
+		ResourceType resourceType = getResourceType(type);
+		File target =  getResourceByType(resourceType, file.path ).getFile();
 		// backup to filename + .yyyymmddhhmmss .
-		File backup = new File(target.getParentFile() , target.getName() + "." + DateUtils.toString(new Date()) ); 
-		
-		FileUtils.copyFile(target, backup);
-		
-		FileUtils.writeStringToFile(target, file.fileContent, ServletUtils.DEFAULT_HTML_ENCODING , false); 
-		
+		if( backup ) {
+			File backupFile = new File(target.getParentFile() , target.getName() + "." + DateUtils.toString(new Date()) );  
+			FileUtils.copyFile(target, backupFile); 
+		}
+		FileUtils.writeStringToFile(target, file.fileContent, ServletUtils.DEFAULT_HTML_ENCODING , false);  
 		FileInfo fileInfo = new FileInfo(target); 
-		fileInfo.setFileContent(target.isDirectory() ? "" : FileUtils.readFileToString(target, "UTF-8")); 
-		
+		fileInfo.setFileContent(target.isDirectory() ? "" : FileUtils.readFileToString(target, "UTF-8"));  
 		return fileInfo;
-    } 
+    } 	 
+	
+    protected String getResourcePathByType(ResourceType type) { 
+		String path = null;
+		if( ResourceType.TEMPLATE ==  type ) {
+			path = configService.getApplicationProperty(CommunityConstants.VIEW_RENDER_FREEMARKER_TEMPLATE_LOCATION_PROP_NAME, "/WEB-INF/template/ftl");
+		}else if (ResourceType.SQL ==  type) {
+			path = configService.getApplicationProperty(CommunityConstants.RESOURCES_SQL_LOCATION_PROP_NAME, "/WEB-INF/sql/");
+		}else if (ResourceType.SCRIPT ==  type) {
+			path = configService.getApplicationProperty(CommunityConstants.RESOURCES_GROOVY_LOCATION_PROP_NAME, "/WEB-INF/groovy-script");
+		}else if (ResourceType.JSP ==  type) {
+			path = configService.getApplicationProperty(CommunityConstants.VIEW_RENDER_JSP_LOCATION_PROP_NAME, "/WEB-INF/jsp");
+		}else if (ResourceType.DECORATOR ==  type) {	
+			path = configService.getApplicationProperty(CommunityConstants.RESOURCES_DECORATOR_LOCATION_PROP_NAME, "/decorators");
+		} 
+		if( path != null )
+			path = StringUtils.removeEnd(path, "/");
+		return path;
+    }
+    
+	protected Resource getResourceByType(ResourceType type, String filename ) {
+		String path = getResourcePathByType(type);  
+		StringBuilder sb = new StringBuilder(path);
+		if(StringUtils.isNotEmpty(filename)) {
+			String filenameToUse = StringUtils.removeStart(filename, "/");
+			sb.append("/").append(filenameToUse); 
+		}
+		return loader.getResource(sb.toString()); 
+	} 
  
 	private boolean isValid(String type) {  
-		if (StringUtils.equals(type, "template") || StringUtils.equals(type, "script") || StringUtils.equals(type, "sql")) {
+		if( ResourceType.valueOf(type.toUpperCase()) != null )
 			return true;
-		}
 		return false;
-	} 
-	
-	private ServletContextResourceLoader loader = null;
-	
-	protected ResourceLoader getResourceLoader () {
-		if( loader == null )
-			loader = new ServletContextResourceLoader(servletContext);
-		return loader;
-	}
-	
-	protected Resource getResourceByType(String type) { 
-		String path = null ;
-		if (StringUtils.equals( type , "template"))
-			path = configService.getApplicationProperty(CommunityConstants.VIEW_RENDER_FREEMARKER_TEMPLATE_LOCATION_PROP_NAME, "/template/ftl/");
-    	else if (StringUtils.equals( type , "sql"))
-    		path =  configService.getApplicationProperty("services.sqlquery.resource.location", "/sql");
-    	else if (StringUtils.equals( type , "script"))
-    		path = configService.getApplicationProperty("services.script.resource.location", "/groovy-script"); 
-		
-		Assert.notNull(path, "Path must not be null");
-		
-		return new FileSystemResource ( repository.getFile(path) ); 
-	}
-	
-    protected String getResourcePathByType(String type) {
-    	if (StringUtils.equals( type , "template"))
-    	    return configService.getApplicationProperty(CommunityConstants.VIEW_RENDER_FREEMARKER_TEMPLATE_LOCATION_PROP_NAME, "/WEB-INF/template/ftl/");
-    	else if (StringUtils.equals( type , "sql"))
-    	    return configService.getApplicationProperty("services.sqlquery.resource.location", "/WEB-INF/sql");
-    	else if (StringUtils.equals( type , "script"))
-    		return configService.getApplicationProperty("services.script.resource.location", "/WEB-INF/groovy-script"); 
-    	return null;
-    }	
-    
+	}  
 
 	public static class FileInfo { 
 		private boolean directory;
@@ -348,8 +350,8 @@ public class ResourcesDataController {
 		@JsonSerialize(using = JsonDateSerializer.class)
 		public Date getLastModifiedDate() {
 			return lastModifiedDate;
-		}
-
+		} 
+		
 		/**
 		 * @param lastModifiedDate
 		 *            설정할 lastModifiedDate
@@ -357,7 +359,7 @@ public class ResourcesDataController {
 		@JsonDeserialize(using = JsonDateDeserializer.class)
 		public void setLastModifiedDate(Date lastModifiedDate) {
 			this.lastModifiedDate = lastModifiedDate;
-		}
-
+		} 
 	}
+
 }

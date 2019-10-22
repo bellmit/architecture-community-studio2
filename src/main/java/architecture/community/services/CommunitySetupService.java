@@ -38,6 +38,10 @@ public class CommunitySetupService  implements InitializingBean, ApplicationCont
 	}
  
 	public void afterPropertiesSet() throws Exception {
+
 	}
+	
+	
+	
 
 }

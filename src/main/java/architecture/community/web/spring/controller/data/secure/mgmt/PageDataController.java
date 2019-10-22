@@ -53,7 +53,7 @@ public class PageDataController {
 	private CustomQueryService customQueryService;
 	
 	@Autowired( required = false) 
-	@Qualifier("communityAclService")
+	@Qualifier("aclService")
 	private CommunityAclService communityAclService;
 	
 	public PageDataController() { 
@@ -67,7 +67,7 @@ public class PageDataController {
 			@RequestParam(value = "page", defaultValue = "0", required = false) Integer page,
 			@RequestParam(value = "skip", defaultValue = "0", required = false) Integer skip,
 			@RequestParam(value = "pageSize", defaultValue = "50", required = false) Integer pageSize,
-			@RequestParam(value = "fields", defaultValue = "", required = false) String fields,
+			@RequestParam(value = "fields", defaultValue = "none", required = false) String fields,
 			NativeWebRequest request) {
 
 		boolean includeBodyContent = StringUtils.containsOnly(fields, "bodyContent"); 

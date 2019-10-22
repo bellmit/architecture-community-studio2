@@ -33,7 +33,7 @@ import architecture.community.page.PageMaker;
 import architecture.community.page.PageService;
 import architecture.community.page.PathPattern;
 import architecture.community.security.spring.acls.CommunityAclService;
-import architecture.community.security.spring.acls.JdbcCommunityAclService.PermissionsBundle;
+import architecture.community.security.spring.acls.PermissionsBundle;
 import architecture.community.services.CommunityGroovyService;
 import architecture.community.util.SecurityHelper;
 import architecture.community.viewcount.ViewCountService;
@@ -56,9 +56,9 @@ public class DisplayController implements ServletContextAware {
 	@Qualifier("configService")
 	private ConfigService configService;
 	
-	@Autowired(required=false)
-	@Qualifier("communityAclService")
-	private CommunityAclService communityAclService;
+	@Autowired(required = false) 
+	@Qualifier("aclService")
+	private CommunityAclService aclService;	
 	
 	@Autowired(required=false)
 	@Qualifier("communityGroovyService")
@@ -78,8 +78,7 @@ public class DisplayController implements ServletContextAware {
 	public void setServletContext(ServletContext servletContext) {
 		this.servletContext = servletContext;
 	} 
-	
-	
+	 
 	
 	@RequestMapping(value = {"/view/{filename:.+}", "/pages/{filename:.+}"}, method = { RequestMethod.POST, RequestMethod.GET })
 	public Object page (
@@ -97,7 +96,7 @@ public class DisplayController implements ServletContextAware {
 		
 		if( page.getPageId() > 0 ) {
 			if( page.isSecured() ) {
-				PermissionsBundle bundle = communityAclService.getPermissionBundle(SecurityHelper.getAuthentication(), Models.PAGE.getObjectClass(), page.getPageId());
+				PermissionsBundle bundle = aclService.getPermissionBundle(SecurityHelper.getAuthentication(), Models.PAGE.getObjectClass(), page.getPageId());
 				if( !bundle.isRead() )
 					throw new UnAuthorizedException();
 			}
@@ -184,7 +183,7 @@ public class DisplayController implements ServletContextAware {
  				Page page = pageService.getPage(pattern.getObjectId(), version);
  				if( page.getPageId() > 0 ) {
  					if( page.isSecured() ) {
- 						PermissionsBundle bundle = communityAclService.getPermissionBundle(SecurityHelper.getAuthentication(), Models.PAGE.getObjectClass(), page.getPageId());
+ 						PermissionsBundle bundle = aclService.getPermissionBundle(SecurityHelper.getAuthentication(), Models.PAGE.getObjectClass(), page.getPageId());
  						if( !bundle.isRead() )
  							throw new UnAuthorizedException();
  					}

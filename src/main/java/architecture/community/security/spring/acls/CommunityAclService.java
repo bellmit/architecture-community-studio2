@@ -10,12 +10,10 @@ import org.springframework.security.acls.model.Permission;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import architecture.community.security.spring.acls.JdbcCommunityAclService.PermissionsBundle;
 import architecture.community.user.Role;
 import architecture.community.user.User;
 
-public interface CommunityAclService extends MutableAclService {
-
+public interface CommunityAclService extends MutableAclService { 
 	
 	
 	public <T> void getFinalGrantedPermissions(  Authentication authentication, Class<T> clazz, Serializable identifier, PermissionsSetter setter ) ;

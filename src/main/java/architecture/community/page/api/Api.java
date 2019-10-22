@@ -17,9 +17,9 @@ public class Api extends PropertyModelObjectAwareSupport implements PropertyMode
 
 	private Long apiId;
 	
-	private String apiName;
+	private String mame;
 	
-	private String apiVersion;
+	private String version;
 	
 	private String description;
 	
@@ -115,20 +115,20 @@ public class Api extends PropertyModelObjectAwareSupport implements PropertyMode
 	}
 
 	
-	public String getApiName() {
-		return apiName;
+	public String getName() {
+		return mame;
 	}
 
-	public void setApiName(String apiName) {
-		this.apiName = apiName;
+	public void setName(String apiName) {
+		this.mame = apiName;
 	}
 
-	public String getApiVersion() {
-		return apiVersion;
+	public String getVersion() {
+		return version;
 	}
 
-	public void setApiVersion(String apiVersion) {
-		this.apiVersion = apiVersion;
+	public void setVersion(String apiVersion) {
+		this.version = apiVersion;
 	}
  
 	public String getDescription() {

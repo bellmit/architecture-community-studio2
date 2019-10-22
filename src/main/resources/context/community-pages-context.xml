@@ -17,8 +17,9 @@
        http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
 
 	<!-- ================================= -->
-    <!-- PAGE							  -->
+    <!-- PAGE							   -->
     <!-- ================================= -->
+    
     <beans:bean id="pageDao" class="architecture.community.page.dao.jdbc.JdbcPageDao" p:dataSource-ref="dataSource" />
 	<beans:bean id="pageVersionDao" class="architecture.community.page.dao.jdbc.JdbcPageVersionDao" p:dataSource-ref="dataSource" />
 
@@ -87,5 +88,11 @@
 	<beans:bean id="viewCountService" class="architecture.community.viewcount.CommunityViewCountService"  />	
 
 
-
+	<!-- ================================= -->
+    <!-- API							   -->
+    <!-- ================================= -->
+    <beans:bean id="apiDao" class="architecture.community.page.api.dao.jdbc.JdbcApiDao" p:dataSource-ref="dataSource" />
+    
+    <beans:bean id="apiService"	class="architecture.community.page.api.CommunityApiService	" />
+    
 </beans:beans> 

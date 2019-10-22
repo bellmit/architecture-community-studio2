@@ -1,11 +1,14 @@
 package architecture.community.web.model;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+
+import org.apache.commons.lang3.StringUtils;
 
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -22,8 +25,6 @@ public class DataSourceRequest {
 
 	private int skip;
 
-	private HashMap<String, Object> data;
-
 	private FilterDescriptor filter;
 	
 	private List<SortDescriptor> sort;
@@ -31,7 +32,9 @@ public class DataSourceRequest {
 	private List<GroupDescriptor> group;
 	
     private List<AggregateDescriptor> aggregate;
-     
+    
+	private HashMap<String, Object> data;
+	
     private List<ParameterValue> parameters;
     
     private String statement;
@@ -316,7 +319,10 @@ public class DataSourceRequest {
 		}
 
 	}
+	
 
+	
+	
 	public static class SortDescriptor {
 		
 		private String field;

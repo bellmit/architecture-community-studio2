@@ -34,6 +34,11 @@
      			<value>sql/community-framework-sqlset.xml</value>     			
      		</beans:list>
      	</beans:property>
+     	<beans:property name="staticModels">
+     		<beans:map>
+     			<beans:entry key="Utils" value="architecture.community.query.Utils"></beans:entry>
+     		</beans:map>
+     	</beans:property>
      </beans:bean>
 
       <beans:bean id="sqlQueryDirectoryScanner" class="architecture.ee.jdbc.sqlquery.scanner.DirectoryScanner" p:sqlQueryFactory-ref="sqlQueryFactory" depends-on="sqlQueryFactory" init-method="initialize" destroy-method="destroy">

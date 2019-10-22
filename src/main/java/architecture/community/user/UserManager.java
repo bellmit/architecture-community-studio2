@@ -16,6 +16,8 @@ public interface UserManager {
 	
 	public abstract void deleteUser(User user) throws UserNotFoundException ;
 	
+	public abstract void deleteUsers(List<User> users) throws UserNotFoundException;
+	
 	public abstract void updateUser(User user)  throws UserNotFoundException, UserAlreadyExistsException ;
 	
     /**

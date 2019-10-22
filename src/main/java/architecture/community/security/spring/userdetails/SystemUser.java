@@ -37,20 +37,17 @@ public class SystemUser extends org.springframework.security.core.userdetails.Us
 	}
 
 	@Override
-	public String getName() {
-		// TODO Auto-generated method stub
+	public String getName() { 
 		return username;
 	}
 
 	@Override
-	public boolean isNameVisible() {
-		// TODO Auto-generated method stub
+	public boolean isNameVisible() { 
 		return false;
 	}
 
 	@Override
-	public boolean isEmailVisible() {
-		// TODO Auto-generated method stub
+	public boolean isEmailVisible() { 
 		return false;
 	}
 
@@ -60,8 +57,7 @@ public class SystemUser extends org.springframework.security.core.userdetails.Us
 	}
 
 	@Override
-	public String getPasswordHash() {
-		// TODO Auto-generated method stub
+	public String getPasswordHash() { 
 		return null;
 	}
 
@@ -77,20 +73,17 @@ public class SystemUser extends org.springframework.security.core.userdetails.Us
 	}
 
 	@Override
-	public Date getCreationDate() {
-		// TODO Auto-generated method stub
+	public Date getCreationDate() { 
 		return null;
 	}
 
 	@Override
-	public Date getModifiedDate() {
-		// TODO Auto-generated method stub
+	public Date getModifiedDate() { 
 		return null;
 	}
 
 	@Override
-	public boolean isExternal() {
-		// TODO Auto-generated method stub
+	public boolean isExternal() { 
 		return false;
 	}
 

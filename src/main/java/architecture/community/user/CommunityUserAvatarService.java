@@ -19,10 +19,16 @@ import org.apache.commons.io.filefilter.FileFilterUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.EnableAspectJAutoProxy;
+import org.springframework.context.event.EventListener;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.google.common.eventbus.Subscribe;
+
 import architecture.community.user.dao.UserAvatarDao;
+import architecture.community.user.event.UserRemovedEvent;
 import architecture.ee.exception.RuntimeError;
 import architecture.ee.service.ConfigService;
 import architecture.ee.service.Repository;
@@ -30,10 +36,10 @@ import net.coobird.thumbnailator.Thumbnails;
 import net.sf.ehcache.Cache;
 import net.sf.ehcache.Element;
 
-
+@EnableAspectJAutoProxy(proxyTargetClass = true)
 public class CommunityUserAvatarService implements UserAvatarService {
 
-	private static final Logger log = LoggerFactory.getLogger(CommunityUserManager.class);
+	private static final Logger log = LoggerFactory.getLogger(CommunityUserAvatarService.class);
 
 	private Lock lock = new ReentrantLock();
 
@@ -63,7 +69,18 @@ public class CommunityUserAvatarService implements UserAvatarService {
     
     
 	private File imageDir;
-
+	
+	@Subscribe
+	@EventListener 
+	@Async
+	public void handelUserRemovedEvent(UserRemovedEvent e) {
+		log.debug("User romoved. Remove all avatar images for '{}'" , e.getUser().getUsername() );
+		User user = e.getUser(); 
+		for( AvatarImage img : getAvatarImages(user))
+			removeAvatarImage(img);
+	}
+	
+	
 	public List<AvatarImage> getAvatarImages(User user) {		
 		List<Long> list = getAvatarImageIdList(user.getUserId());		
 		List<AvatarImage> images = new ArrayList<AvatarImage>(list.size());

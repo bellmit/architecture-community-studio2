@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.event.EventListener;
+import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.util.StringUtils;
 
@@ -32,9 +33,16 @@ import architecture.ee.jdbc.sqlquery.mapping.BoundSql;
 import architecture.ee.service.ConfigService;
 import architecture.ee.service.Repository;
 
+
+/**
+ * External User Provider based JDBC.
+ * @author donghyuck
+ *
+ */
 public class JdbcUserProviderService implements UserProvider {
 
 	protected Logger log = LoggerFactory.getLogger(getClass().getName());
+	
 	private Type type = Type.JDBC;
 	
 	@Inject
@@ -45,16 +53,14 @@ public class JdbcUserProviderService implements UserProvider {
 	@Qualifier("configService")
 	private ConfigService configService;
 	
-	
 	@Autowired (required=false)
-	CommunityAdminService adminService;
+	private CommunityAdminService adminService;
 	
 	private CustomQueryJdbcDao customQueryJdbcDao ;
 	
 	private String name ;
 	
 	private AtomicBoolean isActive = new AtomicBoolean();
-	
 	
 	public JdbcUserProviderService() {
 		this.name = "jdbcUserProvider";
@@ -107,12 +113,22 @@ public class JdbcUserProviderService implements UserProvider {
 	
 	
 	public User getUser(User user) { 
+		
+		if(!isSetCustomQueryJdbcDao())
+			return null;
+		
 		RowMapper<User> mapper = customQueryJdbcDao.getMapperSource("EXTERNAL_USER.USER_ROWMAPPER").createRowMapper(User.class); 
+		
 		Map<String, Object> additionalParameter = new HashMap<String, Object>();
 		additionalParameter.put("_user", user );
 		BoundSql sql = customQueryJdbcDao.getBoundSqlWithAdditionalParameter("EXTERNAL_USER.SELECT_USER_BY", additionalParameter); 
-		User newUser  = customQueryJdbcDao.getExtendedJdbcTemplate().queryForObject( sql.getSql(), mapper );
-		setExternalUser( newUser );
+		User newUser;
+		try {
+			newUser = customQueryJdbcDao.getExtendedJdbcTemplate().queryForObject( sql.getSql(), mapper );
+			setExternalUser( newUser );
+		} catch (DataAccessException e) {
+			return null;
+		}
 		return newUser ;
 	}
 	
@@ -170,11 +186,11 @@ public class JdbcUserProviderService implements UserProvider {
 		
 		List<User> users = new ArrayList<User>(totalCount);
 		if( totalCount > 0) {
-			request.setStatement("EXTERNAL_USER.FIND_USER_IDS_BY_REQUEST");		
-			List<Long> userIds = Utils.list(customQueryJdbcDao, request, Long.class);
-			for( Long userId : userIds ) {
+			request.setStatement("EXTERNAL_USER.FIND_USERNAMES_BY_REQUEST");		
+			List<String> usernames = Utils.list(customQueryJdbcDao, request, String.class);
+			for( String username : usernames ) {
 				try {
-					users.add(userManager.getUser(userId));
+					users.add(userManager.getUser(username));
 				} catch (UserNotFoundException e) {
 				}
 			}
@@ -193,7 +209,7 @@ public class JdbcUserProviderService implements UserProvider {
 	@EventListener(condition = "#event.propertyName  matches 'services.jdbcUserProvider.[a-zA-Z\\s]+'")
 	public void handlePropertiesRefreshedEvent(PropertyChangeEvent event) { 
 		if("services.jdbcUserProvider.enabled".equals(event.getPropertyName()) && event.getNewValue() != null ) {
-			log.debug( "Jdbc User Provider Service Enabled : {}",  Boolean.parseBoolean(event.getNewValue().toString()) );
+			log.debug( "ExternalJdbcUserProvider enabled : {}",  Boolean.parseBoolean(event.getNewValue().toString()) );
 			if( Boolean.parseBoolean(event.getNewValue().toString()) ) {
 				initialize();
 			}else {
@@ -201,6 +217,7 @@ public class JdbcUserProviderService implements UserProvider {
 			}
 		}
 	}
+	
 	public Type getType() {
 		return type;
 	}

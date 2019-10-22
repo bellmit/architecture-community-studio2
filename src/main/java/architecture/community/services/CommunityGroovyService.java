@@ -24,6 +24,7 @@ import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ResourceLoaderAware;
+import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
@@ -45,7 +46,7 @@ public class CommunityGroovyService implements InitializingBean, ResourceLoaderA
 	
 	public static final String JDBC_SCRIPT_PREFIX = "jdbc:";
 	
-	private ResourceLoader resourceLoader;
+	private ResourceLoader resourceLoader = new DefaultResourceLoader();
 
 	protected Logger log = LoggerFactory.getLogger(getClass().getName());
 	 
@@ -77,13 +78,13 @@ public class CommunityGroovyService implements InitializingBean, ResourceLoaderA
 	
 	public void initialize(){		
 		log.debug("creating script service cache ...");		
-		scriptServiceCache = CacheBuilder.newBuilder().maximumSize(5000).expireAfterAccess(24, TimeUnit.HOURS ).build(		
+		scriptServiceCache = CacheBuilder.newBuilder().maximumSize(5000).expireAfterAccess(24, TimeUnit.HOURS ).build( 
 			new CacheLoader<ScriptServiceKey, Object>(){			
 				public Object load(ScriptServiceKey key) throws Exception {
 					log.debug("creating new refreshable script service.");		
 					return getefreshableService(key.scriptSourceLocator, key.requiredType);
 				}
-			}
+			} 
 		);
 	}	
 	
@@ -100,7 +101,7 @@ public class CommunityGroovyService implements InitializingBean, ResourceLoaderA
             {
                 boolean result = scriptDir.mkdir();
                 if(!result)
-                	log.error((new StringBuilder()).append("Unable to create script directory: '").append(scriptDir).append("'").toString());
+                	log.error((new StringBuilder()).append("Unable to create directory: '").append(scriptDir).append("'").toString());
             }
         }
         return scriptDir;
@@ -110,51 +111,30 @@ public class CommunityGroovyService implements InitializingBean, ResourceLoaderA
 		return new ResourceScriptSource( getScriptResource(fileName) );
 	}
 	
-	protected Resource getScriptResource(String fileName) { 
-		File file = new File(getScriptDir(), fileName );
+	/**
+	 * return resource.
+	 * @param path
+	 * @return
+	 */
+	protected Resource getScriptResource(String path) { 
+		File file = new File(getScriptDir(), path );
 		FileSystemResource resource = new FileSystemResource( file ) ;
 		return resource; 
 	}
 	
 	
-	protected ScriptSource getScriptSource(String name) {
+	protected ScriptSource getScriptSource(String path) {
 		synchronized (this.scriptSourceCache) {
-			ScriptSource scriptSource = this.scriptSourceCache.get(name);
+			ScriptSource scriptSource = this.scriptSourceCache.get(path);
 			if (scriptSource == null) {
-				scriptSource = createScriptSource(name);
-				this.scriptSourceCache.put(name, scriptSource);
+				scriptSource = createScriptSource(path);
+				this.scriptSourceCache.put(path, scriptSource);
 			}
 			return scriptSource;
 		}
-	}
-	
-	
-	protected RefreshableScriptTargetSource getRefreshableScriptTargetSource(BeanFactory beanFactory, String beanName, ScriptFactory scriptFactory, ScriptSource scriptSource, boolean isFactoryBean) {  
-		RefreshableScriptTargetSource rsts = new RefreshableScriptTargetSource(beanFactory, beanName, scriptFactory, scriptSource, isFactoryBean) {
-			protected Object obtainFreshBean(BeanFactory beanFactory, String beanName) {
-				/*
-				 * we ask the factory to create a new script bean directly instead
-				 * asking the beanFactory for simplicity. 
-				 */
-				try {
-					return scriptFactory.getScriptedObject(scriptSource);
-				} catch (Exception e) {
-					throw new RuntimeException(e);
-				}
-			}
-		};
-		rsts.setRefreshCheckDelay(1000L);	 
-		return rsts;
-	}
-	
-	private GroovyScriptFactory getGroovyScriptFactory(String scriptSourceLocator) {
-		GroovyScriptFactory factory = new GroovyScriptFactory(scriptSourceLocator); 
-		return factory;
-	}
-	
+	} 
 	
 	public <T> T getService(String scriptSourceLocator, Class<T> requiredType, boolean refreshable ) {	
-		
 		if( refreshable )
 			try {
 				return (T) scriptServiceCache.get( new ScriptServiceKey( scriptSourceLocator, requiredType ) );
@@ -166,11 +146,14 @@ public class CommunityGroovyService implements InitializingBean, ResourceLoaderA
 	}
 	 
 	
+	
 	public <T> T getService(String scriptSourceLocator, Class<T> requiredType) { 
+		
 		GroovyScriptFactory factory = getGroovyScriptFactory(scriptSourceLocator);
+		
 		AutowireCapableBeanFactory beanFactory = applicationContext.getAutowireCapableBeanFactory();
-		beanFactory.autowireBean(factory);
-		ResourceScriptSource script = new ResourceScriptSource(getScriptResource(scriptSourceLocator));
+		beanFactory.autowireBean(factory); 
+		ResourceScriptSource script = new ResourceScriptSource( getScriptResource(scriptSourceLocator) ); 
 		try { 
 			T obj = (T) factory.getScriptedObject(script, requiredType);
 			applicationContext.getAutowireCapableBeanFactory().autowireBean(obj);
@@ -200,6 +183,30 @@ public class CommunityGroovyService implements InitializingBean, ResourceLoaderA
 		return obj;	
 	}
 	
+	
+	
+	protected RefreshableScriptTargetSource getRefreshableScriptTargetSource(BeanFactory beanFactory, String beanName, ScriptFactory scriptFactory, ScriptSource scriptSource, boolean isFactoryBean) {  
+		RefreshableScriptTargetSource rsts = new RefreshableScriptTargetSource(beanFactory, beanName, scriptFactory, scriptSource, isFactoryBean) {
+			protected Object obtainFreshBean(BeanFactory beanFactory, String beanName) {
+				/*
+				 * we ask the factory to create a new script bean directly instead
+				 * asking the beanFactory for simplicity. 
+				 */
+				try {
+					return scriptFactory.getScriptedObject(scriptSource);
+				} catch (Exception e) {
+					throw new RuntimeException(e);
+				}
+			}
+		};
+		rsts.setRefreshCheckDelay(1000L);	 
+		return rsts;
+	} 
+	
+	private GroovyScriptFactory getGroovyScriptFactory(String scriptSourceLocator) {
+		GroovyScriptFactory factory = new GroovyScriptFactory(scriptSourceLocator); 
+		return factory;
+	}
 	
 	static class ScriptServiceKey implements Serializable {
 		String scriptSourceLocator ;

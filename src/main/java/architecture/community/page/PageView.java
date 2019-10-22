@@ -111,8 +111,7 @@ public class PageView implements Page {
 	}
 
 	@JsonIgnore
-	public void setBodyText(String body) { 
-		
+	public void setBodyText(String body) {  
 	}
 
 	@JsonProperty

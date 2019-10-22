@@ -1,7 +1,5 @@
 package architecture.community.query;
 
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -47,7 +45,10 @@ public class CommunityCustomQueryService implements CustomQueryService {
 	public CommunityCustomQueryService(CustomQueryJdbcDao customQueryJdbcDao) {
 		this.customQueryJdbcDao = customQueryJdbcDao;
 	}
-
+	
+	public CustomQueryJdbcDao getCustomQueryJdbcDao() {
+		return customQueryJdbcDao;
+	}
 
 	public List<Map<String, Object>> list(String statement) {
 		DataSourceRequest dataSourceRequest = new DataSourceRequest();
@@ -201,9 +202,9 @@ public class CommunityCustomQueryService implements CustomQueryService {
 	}	
 
 	@Transactional(readOnly = false, propagation = Propagation.REQUIRES_NEW)
-	public <T> T execute(DaoCallback<T> action) throws DataAccessException {
+	public <T> T execute(CustomTransactionCallback<T> action) throws DataAccessException {
 		Assert.notNull(action, "Callback object must not be null");
-		T result = action.process(customQueryJdbcDao);
+		T result = action.doInTransaction(customQueryJdbcDao);
 		return result;
 	}	
 	
@@ -227,15 +228,6 @@ public class CommunityCustomQueryService implements CustomQueryService {
 	 * @return
 	 */
 	private List<SqlParameterValue> getSqlParameterValues (List<ParameterValue> values ){
-		/*
-		ArrayList<SqlParameterValue> al = new ArrayList<SqlParameterValue>();	
-		for( ParameterValue v : values)
-		{
-			logger.debug("isSetByObject : {} , {}", v.isSetByObject(), v.getValueObject() );
-			al.add(new SqlParameterValue(v.getJdbcType(), v.isSetByObject() ? v.getValueObject() : v.getValueText()) );
-		}
-		return al;
-		*/
 		return Utils.getSqlParameterValues(values);
 	}
 	
@@ -245,13 +237,6 @@ public class CommunityCustomQueryService implements CustomQueryService {
 	 * @return
 	 */
 	protected Map<String, Object> getAdditionalParameter( DataSourceRequest dataSourceRequest ){
-		/*
-		Map<String, Object> additionalParameter = new HashMap<String, Object>();
-		additionalParameter.put("filter", dataSourceRequest.getFilter());
-		additionalParameter.put("sort", dataSourceRequest.getSort());		
-		additionalParameter.put("data", dataSourceRequest.getData());
-		return additionalParameter;
-		*/
 		return Utils.getAdditionalParameter(dataSourceRequest);
 	}
 

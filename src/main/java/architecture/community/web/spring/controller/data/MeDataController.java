@@ -18,14 +18,13 @@ import architecture.community.security.spring.userdetails.SystemUser;
 import architecture.community.user.User;
 import architecture.community.util.SecurityHelper;
 
-@Controller("community-me-data-controller")
-@RequestMapping("/data/users")
+@Controller("community-me-data-controller") 
 public class MeDataController {
 
 	public MeDataController() { 
 	} 
 	
-    @RequestMapping(value = "/me.json", method = { RequestMethod.POST, RequestMethod.GET })
+    @RequestMapping(value = "/data/users/me.json", method = { RequestMethod.POST, RequestMethod.GET })
     @ResponseBody
     public UserDetails getUserDetails(Authentication authentication, NativeWebRequest request) {	
 		//Authentication authentication = SecurityHelper.getAuthentication();

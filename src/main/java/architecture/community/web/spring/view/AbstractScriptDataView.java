@@ -1,11 +1,7 @@
 package architecture.community.web.spring.view;
 
-import java.util.Date;
 import java.util.Map;
 
-import javax.inject.Inject;
-
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,14 +10,13 @@ import org.springframework.ui.Model;
 
 import architecture.community.page.api.Api;
 import architecture.community.security.spring.acls.CommunityAclService;
-import architecture.community.security.spring.acls.JdbcCommunityAclService.PermissionsBundle;
+import architecture.community.security.spring.acls.PermissionsBundle;
 import architecture.community.user.User;
 import architecture.community.user.UserManager;
 import architecture.community.user.UserNotFoundException;
 import architecture.community.util.SecurityHelper;
 import architecture.community.web.spring.view.script.DataView;
 import architecture.community.web.spring.view.script.ScriptSupport;
-import architecture.community.web.util.ServletUtils;
 
 public abstract class AbstractScriptDataView extends ScriptSupport implements DataView {
 

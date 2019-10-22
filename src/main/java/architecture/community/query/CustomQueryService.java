@@ -108,12 +108,8 @@ public interface CustomQueryService {
 	
 	public abstract int update ( String statement , Object... args) ;
 	
-	public abstract <T> T execute(DaoCallback<T> action) throws DataAccessException;	
+	public abstract <T> T execute(CustomTransactionCallback<T> callback ) throws  DataAccessException;	
+		
+	public abstract CustomQueryJdbcDao getCustomQueryJdbcDao(); 
 	
-	
-	public interface DaoCallback<T> {
-		T process(CustomQueryJdbcDao dao) throws DataAccessException;
-	}
-	
-
 }

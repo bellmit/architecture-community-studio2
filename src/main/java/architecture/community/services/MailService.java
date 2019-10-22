@@ -1,6 +1,8 @@
 package architecture.community.services;
 
 public interface MailService {
+
+	public boolean isEnabled () ;
 	
 	/**
 	 * 

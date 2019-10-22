@@ -22,6 +22,10 @@ public class LocaleTest {
 
 	@Test
 	public void testTimezone() { 
+		
+		System.out.println(architecture.community.query.CustomQueryService.class.getName() );
+		
+		 
 		Locale.Builder builder = new Locale.Builder();
 
 		Locale locales [] = Locale.getAvailableLocales();

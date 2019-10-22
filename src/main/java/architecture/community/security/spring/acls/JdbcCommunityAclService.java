@@ -31,8 +31,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import architecture.community.model.ModelObject;
-import architecture.community.model.Models; 
 import architecture.community.security.spring.userdetails.CommuintyUserDetails;
 import architecture.community.user.Role;
 import architecture.community.user.User;
@@ -136,8 +134,8 @@ public class JdbcCommunityAclService extends JdbcMutableAclService implements Co
 		}
 					
 		try { 
-			if (!permissions.contains(CommunityPermissions.ADMIN) ) {
-				isGranted = acl.isGranted(Arrays.asList( (Permission)CommunityPermissions.ADMIN) , sids, false);				
+			if (!permissions.contains(CommunityPermissions.ADMINISTRATION) ) {
+				isGranted = acl.isGranted(Arrays.asList( (Permission)CommunityPermissions.ADMINISTRATION) , sids, false);				
 			}
 			
 			log.debug( "Checking permissions {} for {}", permissionsToUse, sids );
@@ -344,31 +342,29 @@ public class JdbcCommunityAclService extends JdbcMutableAclService implements Co
     public PermissionsBundle getPermissionBundle( Authentication authentication, Class objectType , long objectId ) {    
     		
     		final PermissionsBundle bundle = new PermissionsBundle();    		
-    	
-    		getFinalGrantedPermissions(authentication, objectType,  objectId, new PermissionsSetter() {    
-    			
+    		log.debug("permissions for {} {} - {}", objectType , objectId, authentication );
+    		getFinalGrantedPermissions(authentication, objectType,  objectId, new PermissionsSetter() {
     			private boolean isGranted ( MutableAcl acl, Permission permission, List<Sid> sids ) {
     				boolean isGranted = false;
-    				try {
-    					isGranted = acl.isGranted(Arrays.asList(permission), sids, false);
-				} catch (NotFoundException e) { }	
-    				return isGranted;
-    			}    			
+	    			try {
+	    					isGranted = acl.isGranted(Arrays.asList(permission), sids, false);
+					} catch (NotFoundException e) { }	
+	    				return isGranted;
+	    			}
     			
     			public void execute(List<Sid> sids, MutableAcl acl) {			 		
 					log.debug("anonymous : {}", SecurityHelper.isAnonymous());
-					
 					if( acl != null)
 					{						
 				 		if( !SecurityHelper.isAnonymous() )
 				 		{
-				 			log.debug("is granted {} {}" , CommunityPermissions.ADMIN, sids );
+				 			log.debug("is granted {} {}" , CommunityPermissions.ADMINISTRATION, sids );
 				 			try {
-								bundle.admin = isGranted( acl, (Permission)CommunityPermissions.ADMIN, sids);
+								bundle.admin = isGranted( acl, (Permission)CommunityPermissions.ADMINISTRATION, sids);
 							} catch (NotFoundException e) {
 								
 							}			 	
-				 			log.debug("is granted {} > {}" , CommunityPermissions.ADMIN, bundle.admin );
+				 			log.debug("is granted {} > {}" , CommunityPermissions.ADMINISTRATION, bundle.admin );
 				 		}	
 				 		
 				 		if( bundle.admin ) {
@@ -398,63 +394,11 @@ public class JdbcCommunityAclService extends JdbcMutableAclService implements Co
 							bundle.createImage = isGranted( acl, (Permission)CommunityPermissions.CREATE_IMAGE, sids);		
 							bundle.createComment = isGranted( acl, (Permission)CommunityPermissions.CREATE_COMMENT, sids);		
 							bundle.readComment = isGranted( acl, (Permission)CommunityPermissions.READ_COMMENT, sids);	
-						}						 
+						}
 					}
 
 				}});    		
     		return bundle;
-    }
-    
-    
-	public static class PermissionsBundle {    	
-		
-		boolean read = false;
- 		private boolean write = false;
- 		private boolean create = false;
- 		private boolean delete = false;
- 		private boolean admin = false;
- 		private boolean createThread = false;
- 		private boolean createThreadMessage = false;
- 		private boolean createAttachment = false;
- 		private boolean createImage = false;
- 		private boolean createComment = false;
- 		private boolean readComment = false;
- 		
-		public boolean isRead() {
-			return read;
-		}
-		public boolean isWrite() {
-			return write;
-		}
-		public boolean isCreate() {
-			return create;
-		}
-		public boolean isDelete() {
-			return delete;
-		}
-		public boolean isAdmin() {
-			return admin;
-		}
-		public boolean isCreateThread() {
-			return createThread;
-		}
-		public boolean isCreateThreadMessage() {
-			return createThreadMessage;
-		}
-		public boolean isCreateAttachment() {
-			return createAttachment;
-		}
-		public boolean isCreateImage() {
-			return createImage;
-		}
-		public boolean isCreateComment() {
-			return createComment;
-		}
-		public boolean isReadComment() {
-			return readComment;
-		}
- 		
- 		
-	 }
-
+    } 
+   
 }

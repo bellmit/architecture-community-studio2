@@ -89,7 +89,7 @@ public class UserTemplate extends PropertyAwareSupport implements User, Serializ
 		if( user.getStatus() != Status.NONE)
 			this.status = user.getStatus();
 		
-		this.external = false;
+		this.external = user.isExternal();
 	
 	}
 
