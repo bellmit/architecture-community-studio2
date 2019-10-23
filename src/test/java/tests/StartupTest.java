@@ -63,7 +63,7 @@ public class StartupTest {
 		"LOCALE_LANGUAGE_PROP_NAME = {}", configService.getApplicationProperty(CommunityConstants.LOCALE_LANGUAGE_PROP_NAME)
 		);
 		
-		if( configService.isSetDataSource() ) {
+		if( configService.isSetDataSource() && configService.isDatabaseInitialized()) {
 			configService.setApplicationProperty(CommunityConstants.LOCALE_LANGUAGE_PROP_NAME, locale.getLanguage());
 			configService.deleteApplicationProperty(CommunityConstants.LOCALE_LANGUAGE_PROP_NAME);
 		}

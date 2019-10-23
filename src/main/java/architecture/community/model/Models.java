@@ -27,7 +27,7 @@ public enum Models {
 	LOGO_IMAGE(12, LogoImage.class),
 	AVATAR_IMAGE(13, AvatarImage.class),
 	PAGE(14, Page.class),
-	TAG(15, ContentTag.class),  
+	TAG(16, ContentTag.class),  
 	MENU(15, Menu.class),  
 	MENU_ITEM(16, MenuItem.class),  
 	API(30, Api.class)

@@ -175,7 +175,8 @@ COMMENT ON COLUMN `AC_UI_ROLE`.`MODIFIED_DATE` IS '수정일자'; */
 	-- CREATE : 2019.10.11
 	-- UPDATE : 
 	-- =================================================	
-
+		DROP TABLE IF EXISTS AC_UI_MENU, AC_UI_MENU_PROPERTY, AC_UI_MENU_ITEM, AC_UI_MENU_ITEM_PROPERTY ;
+		
 		CREATE TABLE AC_UI_MENU (
 		MENU_ID			INTEGER NOT NULL,
 		NAME			VARCHAR(255) NULL,
@@ -261,7 +262,8 @@ COMMENT ON COLUMN `AC_UI_MENU_ITEM_PROPERTY`.`PROPERTY_VALUE` IS '프로퍼티 �
 	-- CREATE : 2019.09.18
 	-- UPDATE : 
 	-- =================================================	
-			
+		DROP TABLE IF EXISTS AC_UI_AVATAR_IMAGE, AC_UI_AVATAR_IMAGE_DATA  ;
+		
 		CREATE TABLE AC_UI_AVATAR_IMAGE (	
 			`AVATAR_IMAGE_ID` INTEGER NOT NULL COMMENT 'ID', 
 			`USER_ID` INTEGER NOT NULL COMMENT '사용자 ID', 
@@ -401,7 +403,9 @@ COMMENT ON COLUMN `AC_UI_PAGE_PROPERTY`.`PROPERTY_VALUE` IS '프로퍼티 값'; 
 	-- COMPONENT : API 
 	-- CREATE : 2018.10.18
 	-- UPDATE : 
-	-- =================================================		
+	-- =================================================	
+	DROP TABLE IF EXISTS AC_UI_API , AC_UI_API_PROPERTY ;
+	
 	CREATE TABLE AC_UI_API (
 		OBJECT_TYPE				INTEGER NOT NULL,
 		OBJECT_ID				INTEGER NOT NULL,	 
@@ -435,6 +439,8 @@ COMMENT ON COLUMN `AC_UI_PAGE_PROPERTY`.`PROPERTY_VALUE` IS '프로퍼티 값'; 
 	-- =================================================  
 	--  VIEWCOUNT	
 	-- =================================================	
+	DROP TABLE IF EXISTS AC_UI_VIEWCOUNT  ;
+	
 	CREATE TABLE AC_UI_VIEWCOUNT(	
 		ENTITY_TYPE					INTEGER NOT NULL COMMENT '객체 타입',
 		ENTITY_ID					INTEGER NOT NULL COMMENT '객체 아이디',
@@ -447,6 +453,7 @@ COMMENT ON COLUMN `AC_UI_PAGE_PROPERTY`.`PROPERTY_VALUE` IS '프로퍼티 값'; 
 	-- =================================================  
 	--  IMAGE	
 	-- =================================================	   	
+	DROP TABLE IF EXISTS AC_UI_IMAGE , AC_UI_IMAGE_PROPERTY, AC_UI_IMAGE_DATA, AC_UI_IMAGE_LINK ;
 	
 	CREATE TABLE AC_UI_IMAGE (
 		IMAGE_ID                 INTEGER NOT NULL COMMENT 'ID',
@@ -497,11 +504,7 @@ COMMENT ON COLUMN `AC_UI_IMAGE`.`MODIFIED_DATE` IS '수정일'; */
 			  CONSTRAINT AC_UI_IMAGE_DATA_PK PRIMARY KEY (IMAGE_ID)
 		);		        
 		
-		ALTER TABLE `AC_UI_IMAGE_DATA`  COMMENT '이미지 데이터 테이블';
-		/* Moved to CREATE TABLE
-COMMENT ON COLUMN `AC_UI_IMAGE_DATA`.`IMAGE_ID` IS 'ID'; */ 
-		/* Moved to CREATE TABLE
-COMMENT ON COLUMN `AC_UI_IMAGE_DATA`.`IMAGE_DATA` IS '이미지 데이터'; */ 		
+		ALTER TABLE `AC_UI_IMAGE_DATA`  COMMENT '이미지 데이터 테이블'; 
 		
 		CREATE TABLE AC_UI_IMAGE_LINK ( 
 			LINK_ID						VARCHAR(255)	NOT NULL, 
@@ -511,15 +514,13 @@ COMMENT ON COLUMN `AC_UI_IMAGE_DATA`.`IMAGE_DATA` IS '이미지 데이터'; */
 		); 		
 		CREATE UNIQUE INDEX AC_UI_IMAGE_LINK_IDX ON AC_UI_IMAGE_LINK (IMAGE_ID);
 		
-		ALTER TABLE `AC_UI_IMAGE_LINK`  COMMENT '이미지 링크 테이블';
-		/* Moved to CREATE TABLE
-COMMENT ON COLUMN `AC_UI_IMAGE_LINK`.`LINK_ID` IS '링크 아이디'; */ 
-		/* Moved to CREATE TABLE
-COMMENT ON COLUMN `AC_UI_IMAGE_LINK`.`IMAGE_ID` IS '이미지 아이디'; */ 	
+		ALTER TABLE `AC_UI_IMAGE_LINK`  COMMENT '이미지 링크 테이블'; 
 		
 	-- =================================================  
 	--  EXTERNAL_LINK	
 	-- =================================================	
+	DROP TABLE IF EXISTS AC_UI_SHARED_LINK ;
+	
 		CREATE TABLE AC_UI_SHARED_LINK ( 
 			LINK_ID						VARCHAR(255)	NOT NULL COMMENT 'ID', 
 			OBJECT_TYPE					INTEGER NOT NULL COMMENT '객체타입',		
@@ -531,25 +532,15 @@ COMMENT ON COLUMN `AC_UI_IMAGE_LINK`.`IMAGE_ID` IS '이미지 아이디'; */
 		CREATE UNIQUE INDEX AC_UI_SHARED_LINK_IDX1 ON AC_UI_SHARED_LINK (OBJECT_TYPE, OBJECT_ID);
 		
 		ALTER TABLE `AC_UI_SHARED_LINK`  COMMENT '외부 링크 테이블';
-		/* Moved to CREATE TABLE
-COMMENT ON COLUMN `AC_UI_EXTERNAL_LINK`.`LINK_ID` IS '링크 아이디'; */ 
-		/* Moved to CREATE TABLE
-COMMENT ON COLUMN `AC_UI_EXTERNAL_LINK`.`OBJECT_TYPE` IS '객체타입'; */ 	
-		/* Moved to CREATE TABLE
-COMMENT ON COLUMN `AC_UI_EXTERNAL_LINK`.`OBJECT_ID` IS '객체 아이디'; */ 	
-		/* Moved to CREATE TABLE
-COMMENT ON COLUMN `AC_UI_EXTERNAL_LINK`.`PUBLIC_SHARED` IS '공개여부'; */ 	
-		
-		
-
-
 		
 -- ------------------------------------------------------
 --  DDL for Table AC_UI_ATTACHMENT
 -- ------------------------------------------------------
+DROP TABLE IF EXISTS AC_UI_ATTACHMENT , AC_UI_ATTACHMENT_DATA , AC_UI_ATTACHMENT_PROPERTY;
 
-  CREATE TABLE `AC_UI_ATTACHMENT` 
-   (	`ATTACHMENT_ID` INTEGER COMMENT 'ID', 
+  CREATE TABLE AC_UI_ATTACHMENT
+   (	
+    `ATTACHMENT_ID` INTEGER COMMENT 'ID', 
 	`OBJECT_TYPE` INTEGER COMMENT '첨부파일과 연관된 모델 유형', 
 	`OBJECT_ID` INTEGER COMMENT '첨부파일과 연관된 모델 ID', 
 	`CONTENT_TYPE` VARCHAR(255) COMMENT 'CONTENT TYPE 값', 
@@ -557,61 +548,32 @@ COMMENT ON COLUMN `AC_UI_EXTERNAL_LINK`.`PUBLIC_SHARED` IS '공개여부'; */
 	`FILE_SIZE` DECIMAL(38,0) COMMENT '첨부파일 크기', 
 	USER_ID				   	 INTEGER NOT NULL COMMENT '생성자 ID',	 	
 	`CREATION_DATE` DATETIME DEFAULT NOW() COMMENT '생성일', 
-	`MODIFIED_DATE` DATETIME DEFAULT NOW() COMMENT '수정일'
+	`MODIFIED_DATE` DATETIME DEFAULT NOW() COMMENT '수정일',
+	CONSTRAINT `AC_UI_ATTACHMENT_PK` PRIMARY KEY (`ATTACHMENT_ID`)
    ) ;
 
-   /* Moved to CREATE TABLE
-COMMENT ON COLUMN `AC_UI_ATTACHMENT`.`ATTACHMENT_ID` IS 'ID'; */
-   /* Moved to CREATE TABLE
-COMMENT ON COLUMN `AC_UI_ATTACHMENT`.`OBJECT_TYPE` IS '첨부파일과 연관된 모델 유형'; */
-   /* Moved to CREATE TABLE
-COMMENT ON COLUMN `AC_UI_ATTACHMENT`.`OBJECT_ID` IS '첨부파일과 연관된 모델 ID'; */
-   /* Moved to CREATE TABLE
-COMMENT ON COLUMN `AC_UI_ATTACHMENT`.`CONTENT_TYPE` IS 'CONTENT TYPE 값'; */
-   /* Moved to CREATE TABLE
-COMMENT ON COLUMN `AC_UI_ATTACHMENT`.`FILE_NAME` IS '첨부파일 이름'; */
-   /* Moved to CREATE TABLE
-COMMENT ON COLUMN `AC_UI_ATTACHMENT`.`FILE_SIZE` IS '첨부파일 크기'; */
-   /* Moved to CREATE TABLE
-COMMENT ON COLUMN `AC_UI_ATTACHMENT`.`CREATION_DATE` IS '생성일'; */
-   /* Moved to CREATE TABLE
-COMMENT ON COLUMN `AC_UI_ATTACHMENT`.`MODIFIED_DATE` IS '수정일'; */
    ALTER TABLE `AC_UI_ATTACHMENT`  COMMENT '첨부파일 테이블';
-/
--- ------------------------------------------------------
---  DDL for Table AC_UI_ATTACHMENT_DATA
--- ------------------------------------------------------
-
-  CREATE TABLE `AC_UI_ATTACHMENT_DATA` 
-   (	`ATTACHMENT_ID` INTEGER COMMENT 'ID', 
-	`ATTACHMENT_DATA` LONGBLOB COMMENT '첨부파일 데이터'
-   ) ;
-
-   /* Moved to CREATE TABLE
-COMMENT ON COLUMN `AC_UI_ATTACHMENT_DATA`.`ATTACHMENT_ID` IS 'ID'; */
-   /* Moved to CREATE TABLE
-COMMENT ON COLUMN `AC_UI_ATTACHMENT_DATA`.`ATTACHMENT_DATA` IS '첨부파일 데이터'; */
-   ALTER TABLE `AC_UI_ATTACHMENT_DATA`  COMMENT '첨부파일 데이터 테이블';
-/
--- ------------------------------------------------------
---  DDL for Table AC_UI_ATTACHMENT_PROPERTY
--- ------------------------------------------------------
+ 
+  CREATE TABLE AC_UI_ATTACHMENT_DATA 
+  ( 
+     ATTACHMENT_ID  INTEGER COMMENT 'ID',
+	 ATTACHMENT_DATA LONGBLOB COMMENT '첨부파일 데이터' ,
+	 CONSTRAINT `AC_UI_ATTACHMENT_DATA_PK` PRIMARY KEY (`ATTACHMENT_ID`)
+  ) ;
+ 
+  ALTER TABLE AC_UI_ATTACHMENT_DATA  COMMENT '첨부파일 데이터 테이블'; 
+ 
 
   CREATE TABLE `AC_UI_ATTACHMENT_PROPERTY` 
-   (	`ATTACHMENT_ID` INTEGER COMMENT '첨부파일 ID', 
+   (
+    `ATTACHMENT_ID` INTEGER COMMENT '첨부파일 ID', 
 	`PROPERTY_NAME` VARCHAR(100) COMMENT '프로퍼티 이름', 
-	`PROPERTY_VALUE` VARCHAR(1024) COMMENT '프로퍼티 값'
+	`PROPERTY_VALUE` VARCHAR(1024) COMMENT '프로퍼티 값',
+	CONSTRAINT AC_UI_ATTACHMENT_PROPERTY_PK PRIMARY KEY (ATTACHMENT_ID, PROPERTY_NAME)
    ) ;
-
-   /* Moved to CREATE TABLE
-COMMENT ON COLUMN `AC_UI_ATTACHMENT_PROPERTY`.`ATTACHMENT_ID` IS '첨부파일 ID'; */
-   /* Moved to CREATE TABLE
-COMMENT ON COLUMN `AC_UI_ATTACHMENT_PROPERTY`.`PROPERTY_NAME` IS '프로퍼티 이름'; */
-   /* Moved to CREATE TABLE
-COMMENT ON COLUMN `AC_UI_ATTACHMENT_PROPERTY`.`PROPERTY_VALUE` IS '프로퍼티 값'; */
+ 
    ALTER TABLE `AC_UI_ATTACHMENT_PROPERTY`  COMMENT '첨부파일 프로퍼티 테이블';
-/		
-
+   		
 -- ===================================================== --
 -- ACL Schema SQL for MySQL 5.5+ / MariaDB equivalent    --
 -- ----------------------------------------------------- --
@@ -619,6 +581,8 @@ COMMENT ON COLUMN `AC_UI_ATTACHMENT_PROPERTY`.`PROPERTY_VALUE` IS '프로퍼티 
 -- drop table acl_object_identity;
 -- drop table acl_class;
 -- drop table acl_sid;
+
+DROP TABLE IF EXISTS acl_entry , acl_object_identity , acl_class, acl_sid;
 
 CREATE TABLE acl_sid (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,

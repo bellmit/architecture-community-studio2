@@ -43,7 +43,7 @@ public class UserTest {
 	@Test
 	public void testCreateUserIfNotExist() {
 		
-		if( configService.isSetDataSource() && userManager.getUserCount() == 0 ) {
+		if( configService.isSetDataSource() && configService.isDatabaseInitialized() && userManager.getUserCount() == 0 ) {
 			User newUesr = new UserTemplate("system", "18450815", "킹", false, "system@demo.system", false);
 			log.debug("---------------" + newUesr);
 	
@@ -81,7 +81,7 @@ public class UserTest {
 	public void createCompany() {
 		boolean exist = false;
 		Company company = null;
-		if( configService.isSetDataSource() ) {
+		if( configService.isSetDataSource() && configService.isDatabaseInitialized() ) {
 			try {
 				company = companyService.getCompany("PODOSOFTWARE");
 				exist = true;

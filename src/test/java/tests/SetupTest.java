@@ -63,7 +63,7 @@ public class SetupTest {
 	} 
 	  
 	
-	@Test
+	 
 	public void createNewDataSource() {
 		try { 
 			PooledDataSourceConfig bean = DataSourceEditor.newPooledDataSourceBean("externalUserProviderPool");
@@ -98,7 +98,7 @@ public class SetupTest {
 		}
 	}
 	
-	@Test
+	 
 	public void setUserProvider () {
 		
 		if( configService.isSetDataSource() ) {

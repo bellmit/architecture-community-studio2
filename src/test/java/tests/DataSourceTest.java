@@ -35,7 +35,7 @@ public class DataSourceTest {
 		logger.debug("SETUP {}", setupService );
 		Properties connectionProperties = new Properties();
 		connectionProperties.setProperty("DriverClassName", "oracle.jdbc.OracleDriver");
-		connectionProperties.setProperty("url", "jdbc:oracle:thin:@//222.122.47.196:1521/PODODB");
+		connectionProperties.setProperty("url", "jdbc:oracle:thin:@//222.122.47.196:15213/PODODB");
 		connectionProperties.setProperty("username", "U_HELPDESK" );
 		connectionProperties.setProperty("password", "podoq23$");   
 		setupService.registerDataSourceBean("dataSource", connectionProperties);
