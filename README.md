@@ -62,7 +62,7 @@ Touch enabled, responsive and fully customizable.
 
 ## Database 
 MySQL 8.x
-
+Oracle
 
 ## TODO
 Spring Cloud 사용을 위해서는 5.0 버전 사용이 필수적임. 
