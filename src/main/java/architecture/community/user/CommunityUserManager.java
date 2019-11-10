@@ -269,7 +269,7 @@ public class CommunityUserManager extends EventSupport implements UserManager, M
 			throw e;
 		} 
 		UserTemplate userTemplate = new UserTemplate(newUser); 
-		if( user.isExternal() ) { 
+		if( userTemplate.isExternal() ) { 
 			byte buffer [] = new byte[64];
 			secureRandom.nextBytes(buffer);
 			userTemplate.setPassword( new String(buffer) );
@@ -311,7 +311,7 @@ public class CommunityUserManager extends EventSupport implements UserManager, M
 		} 
 		
 		UserTemplate userTemplate = new UserTemplate(newUser); 
-		if( user.isExternal() ) {
+		if( userTemplate.isExternal() ) {
 			
 		}
 		
@@ -320,6 +320,7 @@ public class CommunityUserManager extends EventSupport implements UserManager, M
 		userTemplate.setEmail(caseEmailAddress(newUser));
 		setTemplateDates(userTemplate);  
 		user = createApplicationUser(userTemplate); 
+		
 		for( UserProvider provider : providers) {
 			if(provider.supportsUpdate()) {
 				log.info(CommunityLogLocalizer.format("010031", provider.getName() ));

@@ -16,10 +16,15 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.servlet.View;
 
+import architecture.community.model.Models;
 import architecture.community.page.Page;
 import architecture.community.page.PageNotFoundException;
 import architecture.community.page.PageService;
 import architecture.community.services.CommunityGroovyService;
+import architecture.community.services.CommunitySpringEventPublisher;
+import architecture.community.services.audit.event.AuditLogEvent;
+import architecture.community.util.SecurityHelper;
+import architecture.community.viewcount.ViewCountService;
 import architecture.community.web.util.ServletUtils;
 import architecture.ee.service.ConfigService;
 
@@ -43,6 +48,13 @@ public class WelcomePageController {
 	@Qualifier("communityGroovyService")
 	private CommunityGroovyService communityGroovyService;	
 	
+	@Autowired(required=false)
+	@Qualifier("viewCountService")
+	private ViewCountService viewCountService;
+	
+	@Autowired(required=false)
+	@Qualifier("communityEventPublisher")
+	private CommunitySpringEventPublisher communitySpringEventPublisher;
 	
 	private boolean isSetCommunityGroovyService() {
 		return communityGroovyService != null;
@@ -59,21 +71,23 @@ public class WelcomePageController {
     public String displayWelcomePage (HttpServletRequest request, HttpServletResponse response, Model model) {
 		
 		String view = "index";
+		
 		if(isSetPageService())
 		try { 
 			Page page = pageService.getPage(DEFAULT_WELCOME_PAGE, DEFAULT_WELCOME_PAGE_VERSION ); 
 			model.addAttribute("__page", page); 
 			log.debug("page template is {}", view );  
-			
 			if( StringUtils.isNotEmpty(page.getScript()) && isSetCommunityGroovyService()) {
 				View _view = communityGroovyService.getService(page.getScript(), View.class);
 				try {
 					_view.render( model.asMap(), request, response);
+					
 				} catch (Exception e) {  
 					log.warn(e.getMessage(), e);
 				}
 			} 
 				
+			
 			if( StringUtils.isNotEmpty( page.getTemplate() ) )
 			{
 				view = page.getTemplate(); 
@@ -85,18 +99,19 @@ public class WelcomePageController {
 				}
 			}
 			
+			if( viewCountService != null )
+				viewCountService.addViewCount(page);	
+			
+			if(communitySpringEventPublisher!=null)
+				communitySpringEventPublisher.fireEvent((new AuditLogEvent.Builder(request, response, SecurityHelper.getAuthentication())).object(Models.PAGE.getObjectType(), page.getPageId()).action(AuditLogEvent.READ_ACTION).label(page.getName()).build());
+			
 		} catch (PageNotFoundException e) {
 			ServletUtils.setContentType(ServletUtils.DEFAULT_HTML_CONTENT_TYPE, response);
-		} 
+			communitySpringEventPublisher.fireEvent((new AuditLogEvent.Builder(request, response, SecurityHelper.getAuthentication())).object(Models.PAGE.getObjectType(), -1L).action(AuditLogEvent.READ_ACTION).label("index.html").build());
+		}  
 		
-		/**
-		String name = configService.getApplicationProperty("website.header.menu", null);
-		if( name != null ) {
-			MenuItemTreeWalker walker = menuService.getTreeWalker(name);
-			model.addAttribute("__menu", walker);
-		} 
-		*/
 		isSetupRequired(request, response);
+		
 		return view;
     }
 	

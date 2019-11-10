@@ -1,8 +1,9 @@
 package architecture.community.tag;
 
+import java.io.Serializable;
 import java.util.Date;
 
-public interface ContentTag {
+public interface ContentTag extends Serializable {
 
 	public static final int SORT_TAGNAME = 6000;
 	

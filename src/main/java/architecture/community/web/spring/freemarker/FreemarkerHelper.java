@@ -22,6 +22,7 @@ public class FreemarkerHelper {
 
 		TemplateHashModel staticModels = wrapper.getStaticModels();
 		try {
+			model.put("CommunityConstants",	staticModels.get("architecture.community.util.CommunityConstants"));
 			model.put("StringUtils",	staticModels.get("architecture.ee.util.StringUtils"));
 			model.put("LocaleUtils",	staticModels.get("architecture.ee.util.LocaleUtils"));
 			model.put("ServletUtils",	staticModels.get("architecture.community.web.util.ServletUtils"));

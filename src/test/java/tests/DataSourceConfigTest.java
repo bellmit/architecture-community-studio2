@@ -74,7 +74,7 @@ public class DataSourceConfigTest {
 			
 			DataSourceConfig dataSourceConfig = reader.getDataSoruceConfig(name);
 			if( dataSourceConfig != null)
-				log.debug("DataSourceConfig : {} ", dataSourceConfig.getExportName() );
+				log.debug("DataSourceConfig : {} ", dataSourceConfig.getName() );
 		}
 	}
 	

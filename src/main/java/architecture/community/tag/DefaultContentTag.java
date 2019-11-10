@@ -2,6 +2,12 @@ package architecture.community.tag;
 
 import java.util.Date;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+
+import architecture.community.model.json.JsonDateDeserializer;
+import architecture.community.model.json.JsonDateSerializer;
+
 public class DefaultContentTag implements ContentTag {
 	
 	private long id;
@@ -61,6 +67,7 @@ public class DefaultContentTag implements ContentTag {
 	/**
 	 * @return creationDate
 	 */
+	@JsonSerialize(using = JsonDateSerializer.class)
 	public Date getCreationDate() {
 		return creationDate;
 	}
@@ -69,6 +76,7 @@ public class DefaultContentTag implements ContentTag {
 	 * @param creationDate
 	 *            설정할 creationDate
 	 */
+	@JsonDeserialize(using = JsonDateDeserializer.class)
 	public void setCreationDate(Date creationDate) {
 		this.creationDate = creationDate;
 	}

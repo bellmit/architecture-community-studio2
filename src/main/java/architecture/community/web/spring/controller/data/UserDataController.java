@@ -52,22 +52,22 @@ public class UserDataController {
 		return userAvatarService != null ? true : false;
 	}
 	
-	private com.google.common.cache.LoadingCache<String, Boolean> images = null;
-	
+	private com.google.common.cache.LoadingCache<String, AvatarImage> avatars = null;
+	 
 	@PostConstruct
 	public void initialize(){		
 		log.debug("creating cache ...");		
-		images = CacheBuilder.newBuilder().maximumSize(50).expireAfterAccess(1, TimeUnit.MINUTES).build(		
-				new CacheLoader<String, Boolean>(){
- 					public Boolean load(String username) throws Exception {
+		avatars = CacheBuilder.newBuilder().maximumSize(50).expireAfterAccess(1, TimeUnit.MINUTES).build(		
+				new CacheLoader<String, AvatarImage>(){
+ 					public AvatarImage load(String username) throws Exception {
 						AvatarImage image = null;
 						if( StringUtils.isNotEmpty(username))
 						try {
 							image = userAvatarService.getAvatareImageByUsername(username);
 						} catch (Exception e) { 
-							e.printStackTrace();
+							image = new AvatarImage();
 						} 
-						return image == null ? false : true ;
+						return image ;
 					}			
 				}
 			);
@@ -79,14 +79,14 @@ public class UserDataController {
 	
 	private boolean hasAvatarImage ( String username ) {
 		if( !isSetUserAvatarService() )
-			return false;
-		
-		if( images != null)
+			return false; 
+		if( avatars != null)
 			try {
-				return images.get(username);
+				AvatarImage avatar = avatars.get(username);
+				return avatar.getAvatarImageId() > 0 ? true : false;
 			} catch (ExecutionException e) {
 			}
-		return true;
+		return false;
 	}
 	
 	@RequestMapping(value = "/download/avatar/{username:.+}", method = RequestMethod.GET)
@@ -99,11 +99,11 @@ public class UserDataController {
 		    HttpServletResponse response) { 
 		try {
 			
-			if( !hasAvatarImage(username ))
+			if( !hasAvatarImage( username ))
 			{
 				throw new NotFoundException();
-			}  
-			AvatarImage image = userAvatarService.getAvatareImageByUsername(username); 
+			} 
+			AvatarImage image = userAvatarService.getAvatareImageByUsername(username);  
 			if (image != null) {
 				InputStream input;
 				String contentType;

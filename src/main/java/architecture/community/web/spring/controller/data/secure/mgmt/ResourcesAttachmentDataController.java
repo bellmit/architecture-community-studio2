@@ -81,8 +81,11 @@ public class ResourcesAttachmentDataController {
 		attachmentService.removeAttachment(attachment); 
 		if( isSetSharedLinkService() )
 		{
-			SharedLink link = sharedLinkService.getSharedLink(Models.ATTACHMENT.getObjectType(), attachment.getAttachmentId());
-			sharedLinkService.removeSharedLink(link.getLinkId());
+			try {
+				SharedLink link = sharedLinkService.getSharedLink(Models.ATTACHMENT.getObjectType(), attachment.getAttachmentId());
+				sharedLinkService.removeSharedLink(link.getLinkId());
+			} catch (Exception e) { 
+			}
 		}
 		return Result.newResult();
 	}

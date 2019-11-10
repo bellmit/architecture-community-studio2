@@ -5,19 +5,25 @@ import java.util.Date;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.sql.DataSource;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.http.HttpInputMessage;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.http.server.ServletServerHttpRequest;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 
+import architecture.community.i18n.CommunityLogLocalizer;
 import architecture.community.page.Page;
+import architecture.community.query.dao.CustomQueryJdbcDao;
 import architecture.community.user.User;
+import architecture.community.util.CommunityContextHelper;
 import architecture.community.util.SecurityHelper;
 import architecture.community.web.model.DataSourceRequest;
 import architecture.community.web.util.ServletUtils;
+import architecture.ee.exception.ComponentNotFoundException;
 import architecture.ee.util.StringUtils;
 
 public abstract class ScriptSupport {
@@ -114,4 +120,26 @@ public abstract class ScriptSupport {
 		}
 		return StringUtils.defaultString(json, defaultValue);
 	} 	
+	
+	protected <T> T getComponent(String requiredName, Class<T> requiredType) {
+		return CommunityContextHelper.getComponent(requiredName, requiredType);
+	}
+	
+	/**
+	 * 인자로 전달된 데이터소스로 사용자정의 쿼리 서비스를 생성한다.
+	 * 
+	 * @param dataSource datasource bean name.
+	 * @return
+	 */
+	protected CustomQueryJdbcDao createCustomQueryJdbcDao(String dataSource) {  
+		try {
+			DataSource dataSourceToUse = CommunityContextHelper.getComponent(dataSource, DataSource.class);
+			CustomQueryJdbcDao customQueryJdbcDao = new CustomQueryJdbcDao();
+			CommunityContextHelper.autowire(customQueryJdbcDao);
+			customQueryJdbcDao.setDataSource(dataSourceToUse);
+			return customQueryJdbcDao;
+		} catch (NoSuchBeanDefinitionException e) {
+			throw new ComponentNotFoundException(CommunityLogLocalizer.format("012004", dataSource, DataSource.class.getName() ), e);
+		} 
+	} 
 }

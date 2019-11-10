@@ -85,6 +85,23 @@ public class CommunityPageService extends EventSupport implements PageService {
 		}
 	}
 	
+	public void deletePage(Page page) {
+		if( page.getPageId() > 0 )
+		{ 
+			pageDao.delete(page);
+			fireEvent(new PageEvent(page, PageEvent.Type.DELETED));
+			pagePatternMatchersCache.invalidateAll();
+			if (pageCache.get(page.getPageId()) != null) {
+				pageCache.remove(page.getPageId()); 
+			}
+			String key = getVersionListCacheKey(page.getPageId());
+			if (pageVersionsCache.get(key) != null) {
+				pageVersionsCache.remove(key);
+			}
+			
+		}
+	}
+	
 	public Page createPage(User user, BodyType bodyType, String name, String title, String body) {
 		if (bodyType == null)
 			throw new IllegalArgumentException("A page content type is required to create a page.");

@@ -9,12 +9,15 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
+import org.springframework.stereotype.Component;
 
 import com.google.common.eventbus.Subscribe;
 
 import architecture.community.user.event.UserActivityEvent;
+import architecture.community.util.CommunityConstants;
 import architecture.ee.service.ConfigService;
 
+@Component
 public class UserActivityEventListener {
 
 	protected Logger logger = LoggerFactory.getLogger(getClass());
@@ -34,8 +37,7 @@ public class UserActivityEventListener {
 	@PreDestroy
 	public void destory(){
 		if( configService != null)
-		{
-			//configService.unregisterEventListener(this);
+		{ 
 		}
 	}
 	
@@ -43,6 +45,7 @@ public class UserActivityEventListener {
 	@EventListener 
 	@Async
 	public void handelUserActivityEvent(UserActivityEvent e) {
+		
 		logger.debug("USER : {}, ACTIVITY:{}" , e.getUser().getUsername(), e.getActivity().name() );
 	}
 	

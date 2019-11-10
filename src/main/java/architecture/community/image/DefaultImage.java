@@ -55,6 +55,8 @@ public class DefaultImage extends PropertyModelObjectAwareSupport implements Ima
 	
 	private Date modifiedDate;
 	
+	private String tags;
+	
 	public DefaultImage() {
 		super(UNKNOWN_OBJECT_TYPE, UNKNOWN_OBJECT_ID);
 		this.user = SecurityHelper.ANONYMOUS;
@@ -63,6 +65,7 @@ public class DefaultImage extends PropertyModelObjectAwareSupport implements Ima
 		this.size = 0;
 		this.thumbnailSize = 0 ;
 		this.imageLink = null;
+		this.tags = null;
 	}
 
 	public DefaultImage(Integer objectType, Long objectId) {
@@ -73,6 +76,7 @@ public class DefaultImage extends PropertyModelObjectAwareSupport implements Ima
 		this.thumbnailSize = 0 ;
 		this.user = SecurityHelper.ANONYMOUS;
 		this.imageLink = null;
+		this.tags = null;
 	}
 
 	public String getName() {
@@ -164,12 +168,21 @@ public class DefaultImage extends PropertyModelObjectAwareSupport implements Ima
 		return imageLink;
 	}
 
+	@JsonIgnore
 	public void setImageLink(ImageLink imageLink) {
 		this.imageLink = imageLink;
 	}
 
 	public void setSize(Integer size) {
 		this.size = size;
+	}
+
+	public String getTags() {
+		return tags;
+	}
+
+	public void setTags(String tags) {
+		this.tags = tags;
 	}
 
 	@Override

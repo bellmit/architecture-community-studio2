@@ -1,10 +1,8 @@
 package architecture.community.web.spring.controller.data.secure.mgmt;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
@@ -41,8 +39,10 @@ import architecture.community.image.DefaultImage;
 import architecture.community.image.Image;
 import architecture.community.image.ImageLink;
 import architecture.community.image.ImageService;
+import architecture.community.model.Models;
 import architecture.community.model.Property;
 import architecture.community.query.CustomQueryService;
+import architecture.community.tag.TagService;
 import architecture.community.user.User;
 import architecture.community.util.SecurityHelper;
 import architecture.community.web.model.DataSourceRequest;
@@ -65,7 +65,10 @@ public class ResourcesImagesDataController {
 	@Qualifier("imageService") 
 	private ImageService imageService;
 
-
+	@Autowired(required=false)
+	@Qualifier("tagService")
+	private TagService tagService; 
+	
 	/**
 	 * IMAGES API 
 	******************************************/
@@ -78,7 +81,10 @@ public class ResourcesImagesDataController {
 		@RequestParam(value = "fields", defaultValue = "none", required = false) String fields,
 		NativeWebRequest request) { 
 		
-		boolean includeImageLink = org.apache.commons.lang3.StringUtils.containsOnly(fields, "imageLink");  
+		boolean includeImageLink = org.apache.commons.lang3.StringUtils.contains(fields, "imageLink");  
+		boolean includeTags = org.apache.commons.lang3.StringUtils.contains(fields, "tags");  
+		
+		log.debug("fields link : {} , tags : {}", includeImageLink, includeTags);
 		
 		if( !dataSourceRequest.getData().containsKey("objectType")) {
 			dataSourceRequest.getData().put("objectType", -1);
@@ -101,6 +107,10 @@ public class ResourcesImagesDataController {
 					} catch (Exception ignore) {
 						
 					}
+				}
+				if( includeTags && tagService!= null ) {
+					String tags = tagService.getTagsAsString(Models.IMAGE.getObjectType(), image.getImageId());
+					((DefaultImage)image).setTags( tags );
 				}
 				images.add(image);
 				
@@ -395,6 +405,20 @@ public class ResourcesImagesDataController {
 		return new ItemList(images, images.size() );
 		
 	}	
+
+	@Secured({ "ROLE_ADMINISTRATOR", "ROLE_SYSTEM", "ROLE_DEVELOPER"})
+	@RequestMapping(value = "/images/delete.json", method = { RequestMethod.POST })
+	@ResponseBody
+	public Result deleteImages(@RequestBody List<DefaultImage> images, NativeWebRequest request) throws NotFoundException { 
+		
+		Result result = Result.newResult();
+		for( Image image : images ) {
+			imageService.deleteImage(image);
+			result.setCount( result.getCount() + 1 );
+		}
+		
+		return result;
+	}
 	
 	
 	@Secured({ "ROLE_ADMINISTRATOR", "ROLE_SYSTEM", "ROLE_DEVELOPER"})
@@ -403,11 +427,9 @@ public class ResourcesImagesDataController {
 	public Result removeImageAndLink (
 		@PathVariable Long imageId,
 		@RequestBody DataSourceRequest dataSourceRequest, 
-		NativeWebRequest request) throws NotFoundException {
-		
+		NativeWebRequest request) throws NotFoundException { 
 		Image image = 	imageService.getImage(imageId);
-		imageService.deleteImage(image);
-		
+		imageService.deleteImage(image); 
 		return Result.newResult();
 	}	
 
@@ -431,7 +453,8 @@ public class ResourcesImagesDataController {
 		@RequestParam(value = "fields", defaultValue = "none", required = false) String fields,
 		NativeWebRequest request) throws NotFoundException {
 		
-		boolean includeImageLink = org.apache.commons.lang3.StringUtils.containsOnly(fields, "imageLink");  
+		boolean includeImageLink = org.apache.commons.lang3.StringUtils.contains(fields, "imageLink");  
+		boolean includeTags = org.apache.commons.lang3.StringUtils.contains(fields, "tags");  
 		
 		Image image = 	imageService.getImage(imageId);
 		if( includeImageLink ) {
@@ -442,6 +465,11 @@ public class ResourcesImagesDataController {
 				
 			}
 		}
+		if( includeTags && tagService!= null ) {
+			String tags = tagService.getTagsAsString(Models.IMAGE.getObjectType(), image.getImageId());
+			((DefaultImage)image).setTags( tags );
+		}
+		
 		return image;
 	}
 	

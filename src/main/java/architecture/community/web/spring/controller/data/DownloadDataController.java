@@ -221,10 +221,8 @@ public class DownloadDataController {
 		try { 
 			
 			
-			SharedLink link = sharedLinkService.getSharedLink(linkId);
-			
-			Attachment attachment = attachmentService.getAttachment(link.getObjectId()); 
-			
+			SharedLink link = sharedLinkService.getSharedLink(linkId); 
+			Attachment attachment = attachmentService.getAttachment(link.getObjectId());  
 			// checking security ..
 			if (attachment != null) { 
 				if( !isAllowed(attachment))

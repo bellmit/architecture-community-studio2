@@ -488,7 +488,6 @@ public class SecurityDataController {
 		for( AccessControlEntry entry : entries )
 			list.add(new ObjectAccessControlEntry(entry));		
 		return new ItemList(list, list.size());		
-	
 	}
 	
 	@Secured({ "ROLE_ADMINISTRATOR", "ROLE_SYSTEM" })

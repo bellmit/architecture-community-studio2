@@ -35,6 +35,8 @@ import architecture.community.page.PathPattern;
 import architecture.community.security.spring.acls.CommunityAclService;
 import architecture.community.security.spring.acls.PermissionsBundle;
 import architecture.community.services.CommunityGroovyService;
+import architecture.community.services.CommunitySpringEventPublisher;
+import architecture.community.services.audit.event.AuditLogEvent;
 import architecture.community.util.SecurityHelper;
 import architecture.community.viewcount.ViewCountService;
 import architecture.community.web.util.ServletUtils;
@@ -71,6 +73,10 @@ public class DisplayController implements ServletContextAware {
 	@Autowired(required=false)
 	@Qualifier("viewCountService")
 	private ViewCountService viewCountService;
+	 
+	@Autowired(required=false)
+	@Qualifier("communityEventPublisher")
+	private CommunitySpringEventPublisher communitySpringEventPublisher;
 	
 	private ServletContext servletContext;
 	
@@ -93,6 +99,7 @@ public class DisplayController implements ServletContextAware {
 		log.debug("loading page : {} ({})", filename, version );
 		Page page = pageService.getPage(filename, version);	
 		model.addAttribute("__page", page); 
+		
 		
 		if( page.getPageId() > 0 ) {
 			if( page.isSecured() ) {
@@ -139,6 +146,8 @@ public class DisplayController implements ServletContextAware {
 		} 
 		
 		log.debug("final view is '{}'", view );
+		if(communitySpringEventPublisher!=null)
+			communitySpringEventPublisher.fireEvent((new AuditLogEvent.Builder(request, response, SecurityHelper.getAuthentication())).object(Models.PAGE.getObjectType(), page.getPageId()).action(AuditLogEvent.READ_ACTION).label(page.getName()).build());
 		
 		return view;
 	}
@@ -201,6 +210,10 @@ public class DisplayController implements ServletContextAware {
 						e.printStackTrace();
 					}
  				}
+ 				
+ 				if(communitySpringEventPublisher!=null)
+ 					communitySpringEventPublisher.fireEvent((new AuditLogEvent.Builder(request, response, SecurityHelper.getAuthentication())).object(Models.PAGE.getObjectType(), page.getPageId()).action(AuditLogEvent.READ_ACTION).label(page.getName()).build());
+ 				
  				break;
  			}
  		}
@@ -212,8 +225,8 @@ public class DisplayController implements ServletContextAware {
 		}else if (StringUtils.endsWith(view, ".jsp")) {
 			view = StringUtils.removeEnd(view, ".jsp");	
 		}
+		
 		return view;
 	}
 
-	
 }

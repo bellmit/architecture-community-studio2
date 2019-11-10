@@ -39,7 +39,7 @@ public class JdbcTagDao extends ExtendedJdbcDaoSupport implements TagDao {
 	@Qualifier("propertyDao")
 	private PropertyDao propertyDao;
 	
-	private String tagPropertyTableName = "REP_TAG_PROPERTY";
+	private String tagPropertyTableName = "AC_UI_TAG_PROPERTY";
 	
 	private String tagPropertyPrimaryColumnName = "TAG_ID";
 
@@ -67,39 +67,39 @@ public class JdbcTagDao extends ExtendedJdbcDaoSupport implements TagDao {
 	
 	public void addTag(long tagId, int objectType, long objectId) {
 		Date now = Calendar.getInstance().getTime();
-		getExtendedJdbcTemplate().update(getBoundSql("COMMUNITY_UI.INSERT_TAG").getSql(),
+		getExtendedJdbcTemplate().update(getBoundSql("COMMUNITY_WEB.INSERT_TAG").getSql(),
 				new SqlParameterValue(Types.NUMERIC, tagId), new SqlParameterValue(Types.NUMERIC, objectType),
 				new SqlParameterValue(Types.NUMERIC, objectId), new SqlParameterValue(Types.TIMESTAMP, now));
 
 	}
 
 	public void removeTag(long tagId, int objectType, long objectId) {
-		getExtendedJdbcTemplate().update(getBoundSql("COMMUNITY_UI.DELETE_TAG").getSql(),
+		getExtendedJdbcTemplate().update(getBoundSql("COMMUNITY_WEB.DELETE_TAG").getSql(),
 				new SqlParameterValue(Types.NUMERIC, objectType), new SqlParameterValue(Types.NUMERIC, objectId),
 				new SqlParameterValue(Types.NUMERIC, tagId));
 	}
 
 	public int countTags(long tagId) {
-		return getExtendedJdbcTemplate().queryForObject(getBoundSql("COMMUNITY_UI.COUNT_TAG").getSql(),
+		return getExtendedJdbcTemplate().queryForObject(getBoundSql("COMMUNITY_WEB.COUNT_TAG").getSql(),
 				Integer.class, new SqlParameterValue(Types.NUMERIC, tagId));
 	}
 
 	public List<Long> getTagIds(int objectType, long objectId) {
 		return getExtendedJdbcTemplate().queryForList(
-				getBoundSql("COMMUNITY_UI.SELECT_TAG_IDS_BY_OBJECT_TYPE_AND_OBJECT_ID").getSql(), Long.class,
+				getBoundSql("COMMUNITY_WEB.SELECT_TAG_IDS_BY_OBJECT_TYPE_AND_OBJECT_ID").getSql(), Long.class,
 				new SqlParameterValue(Types.NUMERIC, objectType), new SqlParameterValue(Types.NUMERIC, objectId));
 	}
 
 	public ContentTag getContentTagById(long tagId) {
 		return getExtendedJdbcTemplate().queryForObject(
-				getBoundSql("COMMUNITY_UI.SELECT_CONTENT_TAG_BY_ID").getSql(), conentTagRowMapper,
+				getBoundSql("COMMUNITY_WEB.SELECT_CONTENT_TAG_BY_ID").getSql(), conentTagRowMapper,
 				new SqlParameterValue(Types.NUMERIC, tagId));
 	}
 
 	public ContentTag getContentTagByName(String name) {
 		try {
 			return getExtendedJdbcTemplate().queryForObject(
-					getBoundSql("COMMUNITY_UI.SELECT_CONTENT_TAG_BY_NAME").getSql(), conentTagRowMapper,
+					getBoundSql("COMMUNITY_WEB.SELECT_CONTENT_TAG_BY_NAME").getSql(), conentTagRowMapper,
 					new SqlParameterValue(Types.VARCHAR, name));
 		} catch (EmptyResultDataAccessException e) {
 			return null;
@@ -117,7 +117,7 @@ public class JdbcTagDao extends ExtendedJdbcDaoSupport implements TagDao {
 					((DefaultContentTag) tag).setTagId(tagId);
 				}
 			}
-			getExtendedJdbcTemplate().update(getBoundSql("COMMUNITY_UI.CREATE_CONTENT_TAG").getSql(),
+			getExtendedJdbcTemplate().update(getBoundSql("COMMUNITY_WEB.CREATE_CONTENT_TAG").getSql(),
 					new SqlParameterValue(Types.NUMERIC, tagId), new SqlParameterValue(Types.VARCHAR, tag.getName()),
 					new SqlParameterValue(Types.TIMESTAMP, tag.getCreationDate()));
 			return;
@@ -125,7 +125,7 @@ public class JdbcTagDao extends ExtendedJdbcDaoSupport implements TagDao {
 	}
 
 	public void deleteContentTag(long tagId) {
-		getExtendedJdbcTemplate().update(getBoundSql("COMMUNITY_UI.DELETE_CONTENT_TAG").getSql(),
+		getExtendedJdbcTemplate().update(getBoundSql("COMMUNITY_WEB.DELETE_CONTENT_TAG").getSql(),
 				new SqlParameterValue(Types.NUMERIC, tagId));
 	}
 	

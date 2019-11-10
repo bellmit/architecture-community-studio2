@@ -8,8 +8,7 @@ public class CommunitySpringEventPublisher {
 	@Autowired
     private ApplicationEventPublisher applicationEventPublisher;
 	
-	public CommunitySpringEventPublisher() { 
-		
+	public CommunitySpringEventPublisher() {  
 	}
 
 	public void fireEvent(Object event){		

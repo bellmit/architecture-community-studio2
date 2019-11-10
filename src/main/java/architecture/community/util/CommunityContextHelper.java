@@ -1,7 +1,5 @@
 package architecture.community.util;
 
-import java.util.Optional;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
@@ -12,6 +10,7 @@ import org.springframework.context.ApplicationContextAware;
 import architecture.community.category.CategoryService;
 import architecture.community.comment.CommentService;
 import architecture.community.i18n.CommunityLogLocalizer;
+import architecture.community.navigator.menu.MenuService;
 import architecture.community.page.PageService;
 import architecture.community.query.CustomQueryService;
 import architecture.community.security.spring.acls.CommunityAclService;
@@ -63,6 +62,10 @@ public final class CommunityContextHelper implements ApplicationContextAware {
 		return getComponent(ViewCountService.class);
 	}
 	
+	public static MenuService getMenuService(){
+		return getComponent(MenuService.class);
+	}
+	
 	public static TagService getTagService(){
 		return getComponent(TagService.class);
 	}
@@ -107,7 +110,9 @@ public final class CommunityContextHelper implements ApplicationContextAware {
 		}
 	}
 
-	
+	public static void autowire(Object bean) {
+		applicationContext.getAutowireCapableBeanFactory().autowireBean(bean);
+	}
 	
 	public static <T> T getComponent(String requiredName, Class<T> requiredType) {
 		
@@ -131,4 +136,5 @@ public final class CommunityContextHelper implements ApplicationContextAware {
 
 	}
 
+	
 }

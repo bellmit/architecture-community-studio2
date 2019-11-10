@@ -203,4 +203,14 @@ public class CommunityMenuService implements MenuService {
 	public void refresh(Menu menu) throws MenuNotFoundException {
 		invalidateMenuCache(menu);
 	}
+	
+	public boolean hasMenu(String name) {
+		try {
+			getMenuByName(name);
+			return true;
+		} catch (MenuNotFoundException e) {
+			return false;
+		}
+		
+	}
 }

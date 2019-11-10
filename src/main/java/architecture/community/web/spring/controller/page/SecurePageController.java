@@ -19,6 +19,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.HandlerMapping;
 
 import architecture.community.exception.NotFoundException;
+import architecture.community.model.Models;
+import architecture.community.services.CommunitySpringEventPublisher;
+import architecture.community.services.audit.event.AuditLogEvent;
 import architecture.community.user.User;
 import architecture.community.util.SecurityHelper;
 import architecture.community.web.util.ServletUtils;
@@ -35,6 +38,9 @@ public class SecurePageController {
     @Qualifier("configService")
     private ConfigService configService;
 	
+	@Autowired(required=false)
+	@Qualifier("communityEventPublisher")
+	private CommunitySpringEventPublisher communitySpringEventPublisher;
 	
 	private boolean isSetConfigService() { 
 		return configService != null;
@@ -52,6 +58,11 @@ public class SecurePageController {
 		String lcStr = restOfTheUrl.substring(19).toLowerCase();
 		
 		log.debug("view {} > {} .", restOfTheUrl, lcStr );
+		
+		if(communitySpringEventPublisher!=null)
+			communitySpringEventPublisher.fireEvent((new AuditLogEvent.Builder(request, response, SecurityHelper.getAuthentication())).object(Models.PAGE.getObjectType(), -1L).action(AuditLogEvent.READ_ACTION).label(lcStr).build());
+		
+		
 		return lcStr;
     }
 	
@@ -77,6 +88,10 @@ public class SecurePageController {
 		if( !StringUtils.isEmpty(template)){
 			view = template;
 		}
+		
+		if(communitySpringEventPublisher!=null)
+			communitySpringEventPublisher.fireEvent((new AuditLogEvent.Builder(request, response, SecurityHelper.getAuthentication())).object(Models.PAGE.getObjectType(), -1L).action(AuditLogEvent.READ_ACTION).label(view).build());
+		
 		return view;
     }
 }

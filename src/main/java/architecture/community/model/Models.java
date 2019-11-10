@@ -1,5 +1,6 @@
 package architecture.community.model;
 
+import architecture.community.announce.Announce;
 import architecture.community.attachment.Attachment;
 import architecture.community.category.Category;
 import architecture.community.comment.Comment;
@@ -26,11 +27,12 @@ public enum Models {
 	IMAGE(11, Image.class),
 	LOGO_IMAGE(12, LogoImage.class),
 	AVATAR_IMAGE(13, AvatarImage.class),
-	PAGE(14, Page.class),
-	TAG(16, ContentTag.class),  
+	PAGE(14, Page.class), 
 	MENU(15, Menu.class),  
 	MENU_ITEM(16, MenuItem.class),  
-	API(30, Api.class)
+	TAG(18, ContentTag.class),  
+	API(30, Api.class),
+	ANNOUNCE(41, Announce.class)
 	;
 	
 	private int objectType;

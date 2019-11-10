@@ -171,6 +171,8 @@ public class JdbcCommunityAclService extends JdbcMutableAclService implements Co
 		}
 	}
 	
+	
+	
 	/**
 	 * 지정된 객체에 대한 권한이 있는가를 리턴한다.
 	 * 사용자에게 부여된 롤에 대한 권한 역시 동시에 검사하여 결과에 반영한다.
@@ -249,6 +251,7 @@ public class JdbcCommunityAclService extends JdbcMutableAclService implements Co
 		return isGranted;
 	}
 
+	
 	@Transactional(readOnly = false, propagation = Propagation.REQUIRES_NEW)
 	public <T> void removePermission(Class<T> clazz, Serializable identifier, User user, Permission permission) {
 		Sid sid = new PrincipalSid(user.getUsername());

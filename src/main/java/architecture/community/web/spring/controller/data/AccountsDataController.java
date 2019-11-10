@@ -42,22 +42,22 @@ public class AccountsDataController {
 		
 		String nameToUse =  data.getDataAsString("name", null);
 		String emailToUse =  data.getDataAsString("email", null);
-		
 		String usernameToUse ;
 		if( data.getData().containsKey("username") && StringUtils.isNotEmpty(  data.getDataAsString("username", null)  )) {
 			usernameToUse = data.getDataAsString("username", null);
 		}else {
 			usernameToUse = extractUsernameFromEmail(emailToUse);
-		}
+		} 
 		
 		String passwordToUse =  data.getDataAsString("password", null);
 		boolean mameVisible =  data.getDataAsBoolean("nameVisible", false);
-		boolean emailVisible =  data.getDataAsBoolean("emailVisible", false);		
-		
+		boolean emailVisible =  data.getDataAsBoolean("emailVisible", false);	
 		String ipAddress = request.getNativeRequest(HttpServletRequest.class).getRemoteAddr();		 
+
 		User newUser = new UserTemplate(usernameToUse, passwordToUse, nameToUse, mameVisible, emailToUse, emailVisible); 
 		Result result = Result.newResult();	
 		result.setAnonymous(true);		
+		
 		try {
 			User user = userManager.createUser(newUser);			
 			result.setCount(1);
@@ -69,6 +69,14 @@ public class AccountsDataController {
 		return result;	
 	}
 	
+	
+	/**
+	 * this signup required user form data.
+	 * 
+	 * @param user
+	 * @param request
+	 * @return
+	 */
 	@RequestMapping(value = "/signup-with-user.json", method = { RequestMethod.POST})
 	@ResponseBody
 	public Result signup(@RequestBody UserForm user, NativeWebRequest request)  {		
@@ -94,6 +102,12 @@ public class AccountsDataController {
 		return result;	
 	}
 	
+	/**
+	 * remove last of @ string from emal address.
+	 * 
+	 * @param email
+	 * @return
+	 */
 	private String extractUsernameFromEmail(String email){		
 		int index = email.indexOf('@');
 		return email.substring(0, index );

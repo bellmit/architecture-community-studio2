@@ -18,11 +18,36 @@ package architecture.community.viewcount.event;
 
 import org.springframework.context.ApplicationEvent;
 
-public class ViewEvent extends ApplicationEvent  {
+public class ViewCountEvent extends ApplicationEvent  {
 
+	int objectType = 0;
 	
-	public ViewEvent(Object source) {
+	long objectId = -1L;
+	
+	public ViewCountEvent(Object source ) {
+		super(source); 
+	}
+	
+	public ViewCountEvent(Object source, int objectType, long objectId ) {
 		super(source);
+		this.objectType = objectType;
+		this.objectId = objectId;
+	}
+
+	public int getObjectType() {
+		return objectType;
+	}
+
+	public void setObjectType(int objectType) {
+		this.objectType = objectType;
+	}
+
+	public long getObjectId() {
+		return objectId;
+	}
+
+	public void setObjectId(long objectId) {
+		this.objectId = objectId;
 	}
 	
 	

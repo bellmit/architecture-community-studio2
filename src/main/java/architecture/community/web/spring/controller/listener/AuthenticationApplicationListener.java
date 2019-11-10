@@ -17,7 +17,7 @@ public class AuthenticationApplicationListener {
 	public void handleSessionDestroyedEvent(SessionDestroyedEvent event) {
 		List<SecurityContext> lstSecurityContext = event.getSecurityContexts();
 		for (SecurityContext securityContext : lstSecurityContext) {
-
+			
 			// Try to find out, if this event is caused by a logout,
 			// This is true, when the old session has been an authenticated one.
 			Authentication auth = securityContext.getAuthentication();

@@ -214,9 +214,5 @@ public class CommunityRoleManager implements RoleManager {
 	
 	private String caseRoleName(String name) {
 		return caseInsensitiveRoleNameMatch ? name.toUpperCase() : name;
-	}
-
-
-	
-	
+	} 
 }

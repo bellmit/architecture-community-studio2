@@ -1,6 +1,7 @@
 package architecture.community.web.spring.controller.data.secure.mgmt;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import javax.inject.Inject;
@@ -18,6 +19,7 @@ import org.springframework.web.context.request.NativeWebRequest;
 
 import architecture.community.exception.NotFoundException;
 import architecture.community.model.Property;
+import architecture.community.services.CommunityAdminService;
 import architecture.community.web.model.DataSourceRequest;
 import architecture.ee.service.ConfigService;
 
@@ -31,6 +33,10 @@ public class ConfigDataController {
 	@Qualifier("configService")
 	private ConfigService configService;
 	
+	@Inject
+	@Qualifier("adminService")
+	private CommunityAdminService adminService;
+	
 	public ConfigDataController() { 
 	}
  
@@ -40,6 +46,7 @@ public class ConfigDataController {
 	******************************************/
 	
 	private List<Property> getApplicationProperties(){
+		
 		List<String> propertyKeys = configService.getApplicationPropertyNames();
 		List<Property> list = new ArrayList<Property>(); 
 		for( String key : propertyKeys ) {
@@ -53,6 +60,11 @@ public class ConfigDataController {
 	@RequestMapping(value = "/properties/list.json", method = { RequestMethod.POST, RequestMethod.GET })
 	@ResponseBody
 	public List<Property> list(@RequestBody DataSourceRequest dataSourceRequest, NativeWebRequest request){ 
+		if(!configService.isDatabaseInitialized())
+		{
+			return Collections.EMPTY_LIST;
+		}
+		
 		return getApplicationProperties() ;
 	}
 	
@@ -62,6 +74,12 @@ public class ConfigDataController {
 	public List<Property> saveOrUpdate( 
 			@RequestBody List<Property> newProperties, 
 			NativeWebRequest request) throws NotFoundException { 
+		
+		if(!configService.isDatabaseInitialized())
+		{
+			return Collections.EMPTY_LIST;
+		}
+		
 		for (Property property : newProperties) {
 			configService.setApplicationProperty(property.getName(), property.getValue());
 		}		
@@ -73,6 +91,11 @@ public class ConfigDataController {
 	@ResponseBody
 	public List<Property> delete(  
 			@RequestBody List<Property> newProperties, NativeWebRequest request) throws NotFoundException {
+		
+		if(!configService.isDatabaseInitialized())
+		{
+			return Collections.EMPTY_LIST;
+		}
 		
 		for (Property property : newProperties) {
 			configService.deleteApplicationProperty(property.getName());

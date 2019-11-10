@@ -87,7 +87,8 @@
 		
 	<beans:bean id="viewCountService" class="architecture.community.viewcount.CommunityViewCountService"  />	
 
-
+	<beans:bean id="viewCountEventListener" class="architecture.community.viewcount.event.listener.ViewCountEventListener"  />
+	
 	<!-- ================================= -->
     <!-- API							   -->
     <!-- ================================= -->

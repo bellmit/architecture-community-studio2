@@ -451,6 +451,7 @@ public class JdbcPageDao extends ExtendedJdbcDaoSupport implements PageDao {
 			List<Long> bodyIds = getExtendedJdbcTemplate().queryForList(
 				getBoundSql("COMMUNITY_PAGE.SELETE_PAGE_BODY_IDS").getSql(), Long.class,
 				new SqlParameterValue(Types.NUMERIC, page.getPageId()));
+			
 			getExtendedJdbcTemplate().update(getBoundSql("COMMUNITY_PAGE.DELETE_PAGE_BODY_VERSIONS").getSql(),
 				new SqlParameterValue(Types.NUMERIC, page.getPageId()));
 			for (long bodyId : bodyIds) {
@@ -460,6 +461,7 @@ public class JdbcPageDao extends ExtendedJdbcDaoSupport implements PageDao {
 			getExtendedJdbcTemplate().update(getBoundSql("COMMUNITY_PAGE.DELETE_PAGE_PROPERTIES").getSql(), new SqlParameterValue(Types.NUMERIC, page.getPageId()));
 			getExtendedJdbcTemplate().update(getBoundSql("COMMUNITY_PAGE.DELETE_PAGE").getSql(), new SqlParameterValue(Types.NUMERIC, page.getPageId()));
 		}
+		
 	}
 
 	public Page getPageById(long pageId) {

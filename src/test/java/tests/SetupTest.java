@@ -90,7 +90,7 @@ public class SetupTest {
 			 
 			if( communityAdminService.testConnection(bean) ){ 
 				communityAdminService.addConnectionProvider(bean);
-				CommunityContextHelper.getComponent(bean.getExportName(), DataSource.class);
+				CommunityContextHelper.getComponent(bean.getName(), DataSource.class);
 			}
 			
 		} catch (Exception e) {

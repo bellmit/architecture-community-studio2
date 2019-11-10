@@ -16,12 +16,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.stereotype.Controller;
-import org.springframework.util.Assert;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -40,6 +38,7 @@ import architecture.community.model.json.JsonDateDeserializer;
 import architecture.community.model.json.JsonDateSerializer;
 import architecture.community.util.CommunityConstants;
 import architecture.community.util.DateUtils;
+import architecture.community.web.model.Result;
 import architecture.community.web.util.ServletUtils;
 import architecture.ee.service.ConfigService;
 import architecture.ee.service.Repository;
@@ -79,6 +78,46 @@ public class ResourcesDataController {
 	
 	private ResourceType getResourceType(String name ) {
 		return ResourceType.valueOf(name.toUpperCase());
+	}
+	@Secured({ "ROLE_ADMINISTRATOR", "ROLE_SYSTEM", "ROLE_DEVELOPER"})
+	@RequestMapping(value = "/resources/{type}/create.json", method = { RequestMethod.POST, RequestMethod.GET })
+	@ResponseBody
+	public Result newFolder(
+			@PathVariable String type, 
+			@RequestParam(value = "path", defaultValue = "", required = false) String path,
+			@RequestParam(value = "filename", defaultValue = "false", required = true) String filename,
+			@RequestParam(value = "directory", defaultValue = "false", required = false) boolean directory,
+			NativeWebRequest request)
+		throws NotFoundException {
+		
+		Result result = Result.newResult() ;
+		log.debug("create new folder for '{}', '{}', '{}'", type,  path, filename);
+		if (!isValid(type)) {
+			throw new IllegalArgumentException();
+		} 
+		
+		ResourceType resourceType = getResourceType(type);
+		Resource root = getResourceByType( resourceType , null); 
+		 
+		try { 
+			File fileToUse = root.getFile(); 
+			if (StringUtils.isEmpty(path)) { 
+				fileToUse = root.getFile();
+			}else { 
+				fileToUse = new File(root.getFile(), path);
+			}
+			File newFile = new File( fileToUse, filename);
+			if( directory )
+				newFile.mkdir();
+			else
+				newFile.createNewFile();
+			
+		} catch (IOException e) {
+			result.setError(e);
+			log.error(e.getMessage());
+		}
+		
+		return result;
 	}
 	
 	@Secured({ "ROLE_ADMINISTRATOR", "ROLE_SYSTEM", "ROLE_DEVELOPER"})
@@ -182,18 +221,21 @@ public class ResourcesDataController {
     protected String getResourcePathByType(ResourceType type) { 
 		String path = null;
 		if( ResourceType.TEMPLATE ==  type ) {
-			path = configService.getApplicationProperty(CommunityConstants.VIEW_RENDER_FREEMARKER_TEMPLATE_LOCATION_PROP_NAME, "/WEB-INF/template/ftl");
+			StringBuilder sb = new StringBuilder().append(File.separatorChar).append("WEB-INF").append(File.separatorChar).append("template").append(File.separatorChar).append("ftl");
+			path = configService.getApplicationProperty(CommunityConstants.VIEW_RENDER_FREEMARKER_TEMPLATE_LOCATION_PROP_NAME, sb.toString());
 		}else if (ResourceType.SQL ==  type) {
-			path = configService.getApplicationProperty(CommunityConstants.RESOURCES_SQL_LOCATION_PROP_NAME, "/WEB-INF/sql/");
+			StringBuilder sb = new StringBuilder().append(File.separatorChar).append("WEB-INF").append(File.separatorChar).append("sql");
+			path = configService.getApplicationProperty(CommunityConstants.RESOURCES_SQL_LOCATION_PROP_NAME, sb.toString());
 		}else if (ResourceType.SCRIPT ==  type) {
-			path = configService.getApplicationProperty(CommunityConstants.RESOURCES_GROOVY_LOCATION_PROP_NAME, "/WEB-INF/groovy-script");
+			StringBuilder sb = new StringBuilder().append(File.separatorChar).append("WEB-INF").append(File.separatorChar).append("groovy-script");
+			path = configService.getApplicationProperty(CommunityConstants.RESOURCES_GROOVY_LOCATION_PROP_NAME, sb.toString());
 		}else if (ResourceType.JSP ==  type) {
-			path = configService.getApplicationProperty(CommunityConstants.VIEW_RENDER_JSP_LOCATION_PROP_NAME, "/WEB-INF/jsp");
+			StringBuilder sb = new StringBuilder().append(File.separatorChar).append("WEB-INF").append(File.separatorChar).append("jsp");
+			path = configService.getApplicationProperty(CommunityConstants.VIEW_RENDER_JSP_LOCATION_PROP_NAME, sb.toString());
 		}else if (ResourceType.DECORATOR ==  type) {	
-			path = configService.getApplicationProperty(CommunityConstants.RESOURCES_DECORATOR_LOCATION_PROP_NAME, "/decorators");
+			StringBuilder sb = new StringBuilder().append(File.separatorChar).append("decorators");
+			path = configService.getApplicationProperty(CommunityConstants.RESOURCES_DECORATOR_LOCATION_PROP_NAME, sb.toString());
 		} 
-		if( path != null )
-			path = StringUtils.removeEnd(path, "/");
 		return path;
     }
     
@@ -202,7 +244,8 @@ public class ResourcesDataController {
 		StringBuilder sb = new StringBuilder(path);
 		if(StringUtils.isNotEmpty(filename)) {
 			String filenameToUse = StringUtils.removeStart(filename, "/");
-			sb.append("/").append(filenameToUse); 
+			filenameToUse = StringUtils.removeStart(filename, "\\");
+			sb.append(File.separatorChar).append(filenameToUse); 
 		}
 		return loader.getResource(sb.toString()); 
 	} 

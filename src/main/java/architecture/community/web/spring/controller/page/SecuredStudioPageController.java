@@ -17,8 +17,12 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.servlet.HandlerMapping;
 
 import architecture.community.exception.NotFoundException;
+import architecture.community.model.Models;
 import architecture.community.page.DefaultPage;
 import architecture.community.security.spring.userdetails.SystemUser;
+import architecture.community.services.CommunitySpringEventPublisher;
+import architecture.community.services.audit.event.AuditLogEvent;
+import architecture.community.util.SecurityHelper;
 import architecture.community.web.util.ServletUtils;
 import architecture.ee.service.ConfigService;
 
@@ -45,6 +49,9 @@ public class SecuredStudioPageController {
     @Qualifier("configService")
     private ConfigService configService;
 	
+	@Autowired(required=false)
+	@Qualifier("communityEventPublisher")
+	private CommunitySpringEventPublisher communitySpringEventPublisher;
 	
 	@Secured({ "ROLE_ADMINISTRATOR", "ROLE_SYSTEM", "ROLE_DEVELOPER"})
 	@RequestMapping(value={"/", "/index"}, method = { RequestMethod.POST, RequestMethod.GET })
@@ -54,7 +61,8 @@ public class SecuredStudioPageController {
 	    Model model) throws NotFoundException, IOException {	
 		String view = "/studio/index";
 		ServletUtils.setContentType(ServletUtils.DEFAULT_HTML_CONTENT_TYPE, response);	 
-		setPage( model, view );
+		setPage( request, response, model, view );
+		 
 		return view;
     }
 	
@@ -68,15 +76,22 @@ public class SecuredStudioPageController {
 		String restOfTheUrl = (String) request.getAttribute(HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE);		
 		String lcStr = restOfTheUrl.substring(8).toLowerCase(); 
 		log.debug("view {} > {} .", restOfTheUrl, lcStr );
-		setPage( model, lcStr );
+		setPage( request, response, model, lcStr );
+		
+		
 		return lcStr;
     } 
 	
-	private void setPage (Model model, String template) { 
+	private void setPage (HttpServletRequest request, HttpServletResponse response, Model model, String template) { 
 		DefaultPage page = new DefaultPage();
 		SystemUser user = new SystemUser();
 		page.setUser(user);
 		page.setTemplate(template);
-		model.addAttribute("__page", page); 
+		model.addAttribute("__page", page);  
+		
+		if(communitySpringEventPublisher!=null)
+			communitySpringEventPublisher.fireEvent((new AuditLogEvent.Builder(request, response, SecurityHelper.getAuthentication())).object(Models.PAGE.getObjectType(), -1L).action(AuditLogEvent.READ_ACTION).label(template).build());
+		
+		
 	}
 }

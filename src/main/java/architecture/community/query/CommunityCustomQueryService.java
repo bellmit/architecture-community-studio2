@@ -50,6 +50,10 @@ public class CommunityCustomQueryService implements CustomQueryService {
 		return customQueryJdbcDao;
 	}
 
+	public void setCustomQueryJdbcDao(CustomQueryJdbcDao customQueryJdbcDao) {
+		this.customQueryJdbcDao = customQueryJdbcDao;
+	}
+
 	public List<Map<String, Object>> list(String statement) {
 		DataSourceRequest dataSourceRequest = new DataSourceRequest();
 		dataSourceRequest.setStatement(statement);

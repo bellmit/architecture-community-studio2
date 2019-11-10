@@ -6,11 +6,15 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 import javax.inject.Inject;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.ApplicationEventPublisher;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.eventbus.Subscribe;
@@ -21,8 +25,9 @@ import architecture.community.model.ModelObjectKey;
 import architecture.community.model.Models;
 import architecture.community.page.event.PageEvent;
 import architecture.community.tag.dao.TagDao;
+import architecture.community.tag.event.TagChangeEvent;
+import architecture.ee.component.event.PropertyChangeEvent.Type;
 import architecture.ee.util.StringUtils;
-
 import net.sf.ehcache.Cache;
 import net.sf.ehcache.Element; 
 
@@ -46,7 +51,9 @@ public class DefaultTagService implements TagService {
 	@Qualifier("tagContentCache")
 	private Cache tagContentCache;
  
-
+	@Autowired(required=false)
+	private ApplicationEventPublisher applicationEventPublisher;
+	
 	//@Inject
 	//@Qualifier("tagSetManager")
 	//private TagSetManager tagSetManager;
@@ -56,9 +63,12 @@ public class DefaultTagService implements TagService {
 	public DefaultTagService() { 
 	}
 	
+	@PostConstruct
 	public void initialize() { 
+		
 	}
 
+	@PreDestroy
 	public void destroy() { 
 	}
  
@@ -69,8 +79,12 @@ public class DefaultTagService implements TagService {
 			DefaultContentTag newTag = new DefaultContentTag(-1L, name.toLowerCase(), new Date());
 			tagDao.createContentTag(newTag);
 			if (newTag.getTagId() > 0) {
-				tagCache.put( new Element( Long.valueOf(newTag.getTagId()), newTag ) );
-				tagIdCache.put( new Element( newTag.getName().toLowerCase(), Long.valueOf(newTag.getTagId())) );
+				tagCache.put( new Element( newTag.getTagId(), newTag ) );
+				tagIdCache.put( new Element( newTag.getName().toLowerCase(), newTag.getTagId() ) );
+			}
+			
+			if(applicationEventPublisher!=null) {
+				applicationEventPublisher.publishEvent(new TagChangeEvent(this, Type.ADDED, newTag));
 			}
 			// fire event;
 			return newTag;
@@ -92,11 +106,10 @@ public class DefaultTagService implements TagService {
 		} else {
 			ContentTag tag = tagDao.getContentTagByName(name);
 			if (tag == null) {
-				throw new TagNotFoundException(
-						new StringBuilder().append("No tag with name '").append(name).append("' exists.").toString());
+				throw new TagNotFoundException(new StringBuilder().append("No tag with name '").append(name).append("' exists.").toString());
 			} else {
-				tagCache.put( new Element( Long.valueOf(tag.getTagId()), tag) );
-				tagIdCache.put( new Element( tag.getName().toLowerCase(), Long.valueOf(tag.getTagId())) );
+				tagCache.put( new Element( tag.getTagId(), tag) );
+				tagIdCache.put( new Element( tag.getName().toLowerCase(), tag.getTagId() ) );
 				return tag.getTagId();
 			}
 		}
@@ -105,14 +118,14 @@ public class DefaultTagService implements TagService {
 	public ContentTag getTag(long tagId) throws TagNotFoundException {
 		ContentTag tag;
 		if (tagCache.get(tagId) != null) {
-			tag = (ContentTag) tagCache.get(tagId);
+			tag = (ContentTag) tagCache.get(tagId).getObjectValue();
 		} else {
 			tag = tagDao.getContentTagById(tagId);
  
 			if (tag == null)
 				throw new TagNotFoundException();
-			tagCache.put( new Element( Long.valueOf(tag.getTagId()), tag)) ;
-			tagIdCache.put( new Element( tag.getName().toLowerCase(), Long.valueOf(tag.getTagId())) );
+			tagCache.put( new Element( tag.getTagId(), tag)) ;
+			tagIdCache.put( new Element( tag.getName().toLowerCase(), tag.getTagId() ) );
 		}
 		return tag;
 	}
@@ -120,6 +133,7 @@ public class DefaultTagService implements TagService {
 	public void addTag(ContentTag tag, int objectType, long objectId) throws UnAuthorizedException {
 		if (objectType < 0 || objectId < 0L)
 			throw new IllegalStateException();
+		
 		synchronized (getLock(objectType, objectId)) {
 			List<Long> tags = getTagIds(objectType, objectId);
 			int index = tags.indexOf(Long.valueOf(tag.getTagId()));
@@ -128,8 +142,11 @@ public class DefaultTagService implements TagService {
 				tagContentCache.put( new Element(new ModelObjectKey(objectType, objectId), tags) );
 			}
 		}
+		
 		tagDao.addTag(tag.getTagId(), objectType, objectId);
-		// event.. fire 
+		if(applicationEventPublisher!=null) {
+			applicationEventPublisher.publishEvent(new TagChangeEvent(this, Type.ADDED, tag, objectType , objectId ));
+		}
 	}
 
 	private Object getLock(int objectType, long objectId) {
@@ -213,12 +230,15 @@ public class DefaultTagService implements TagService {
 
 		// fire event..
 		removeTagFromDb(tag, objectType, objectId);
+		if(applicationEventPublisher!=null) {
+			applicationEventPublisher.publishEvent(new TagChangeEvent(this, Type.REMOVED, tag, objectType , objectId ));
+		} 
 	}
 
 	private void removeTagFromDb(ContentTag tag, int objectType, long objectId) {
 		tagDao.removeTag(tag.getTagId(), objectType, objectId);
 		if (tagContentCache.get(getCacheKey(objectType, objectId)) != null)
-			((List<Long>) tagContentCache.get(getCacheKey(objectType, objectId))).remove(Long.valueOf(tag.getTagId()));
+			((List<Long>) tagContentCache.get(getCacheKey(objectType, objectId)).getObjectValue()).remove(Long.valueOf(tag.getTagId()));
 		/*
 		 * if(tagDao.countTags(tag.getTagId()) <= 0 &&
 		 * !tagSetManager.getTagSetsTagBelongsTo(tag).hasNext()) {
@@ -235,8 +255,7 @@ public class DefaultTagService implements TagService {
 		if (objectType < 0 || objectId < 0L)
 			throw new IllegalStateException();
 		synchronized (getLock(objectType, objectId)) {
-			List<ContentTag> contentTags = new ImmutableList.Builder<ContentTag>().addAll(getTags(objectType, objectId))
-					.build();
+			List<ContentTag> contentTags = new ImmutableList.Builder<ContentTag>().addAll(getTags(objectType, objectId)).build();
 			for (ContentTag tag : contentTags) {
 				List<Long> tags = getTagIds(objectType, objectId);
 				int index = tags.indexOf(Long.valueOf(tag.getTagId()));
@@ -248,12 +267,6 @@ public class DefaultTagService implements TagService {
 			tagContentCache.remove(getCacheKey(objectType, objectId));
 		}
 	}
-
-	@Subscribe 
-	public void onEvent(PageEvent event) {
-		log.debug("page event : " + event.getType().name());
-	}
-
 	
 	public TagDelegator getTagDelegator(Category category) { 
 		return new DefaultTagDelegator( Models.CATEGORY.getObjectType(), category.getCategoryId(), this); 

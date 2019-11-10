@@ -27,11 +27,12 @@ import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.jdbc.support.DatabaseMetaDataCallback;
 import org.springframework.jdbc.support.JdbcUtils;
 import org.springframework.jdbc.support.MetaDataAccessException;
-import org.springframework.util.ClassUtils;
 
 import architecture.community.admin.menu.MenuComponent;
 import architecture.community.admin.menu.SetupMenuService;
 import architecture.community.i18n.CommunityLogLocalizer;
+import architecture.community.query.CommunityCustomQueryService;
+import architecture.community.query.CustomQueryService;
 import architecture.community.query.dao.CustomQueryJdbcDao;
 import architecture.community.services.mail.MailServicesConfig;
 import architecture.community.user.MultiUserManager;
@@ -74,9 +75,6 @@ public class CommunityAdminService implements ApplicationContextAware , Manageme
 		
 	} 
 	
-	
-	
-	
 	private boolean isSetMenuService() {
 		return menuService != null;
 	}
@@ -96,7 +94,7 @@ public class CommunityAdminService implements ApplicationContextAware , Manageme
 	private void autowire(Object bean) {
 		applicationContext.getAutowireCapableBeanFactory().autowireBean(bean);
 	}
-	
+	 
 	// System Information ..
 	
 	public SystemInfo getSystemInfo() {
@@ -132,8 +130,6 @@ public class CommunityAdminService implements ApplicationContextAware , Manageme
 	}
 
 	
-	
-	
 	/**
 	 * 인자로 전달된 데이터소스로 사용자정의 쿼리 서비스를 생성한다.
 	 * 
@@ -153,23 +149,40 @@ public class CommunityAdminService implements ApplicationContextAware , Manageme
 	}  
 	
 	
+	public CustomQueryService createCustomQueryService(String dataSource) {  
+		try {
+			
+			DataSource dataSourceToUse = applicationContext.getBean(dataSource, DataSource.class);
+			CommunityCustomQueryService customQueryService = new CommunityCustomQueryService();
+			autowire(customQueryService);
+			
+			CustomQueryJdbcDao customQueryJdbcDao = new CustomQueryJdbcDao();
+			autowire(customQueryJdbcDao);
+			customQueryJdbcDao.setDataSource(dataSourceToUse); 
+			customQueryService.setCustomQueryJdbcDao(customQueryJdbcDao); 
+			return customQueryService;
+		} catch (NoSuchBeanDefinitionException e) {
+			throw new ComponentNotFoundException(CommunityLogLocalizer.format("012004", dataSource, DataSource.class.getName() ), e);
+		} 
+	}	
+	
 	
 	
 	/**
 	 * dataSourceName 에 해당하는 데이터소스가 없는 경우 생성한다.
-	 * 성성을 위해서는 반듯이 startup-config.xml d에 정의되어 있어야 한다.
+	 * 성성을 위해서는 반듯이 startup-config.xml 에 정의되어 있어야 한다.
 	 * 
-	 * @param dataSourceName
+	 * @param beanName
 	 * @return
 	 */
-	public boolean isExistAndCreateIfNotExist(String dataSourceName ) { 
-		logger.debug("Checking context contain bean ({}): {}", dataSourceName , applicationContext.containsBeanDefinition(dataSourceName));
-		if( !applicationContext.containsBeanDefinition(dataSourceName) ) { 
-			String key = String.format( "database.%s" , dataSourceName ); 
+	public boolean isExistAndCreateIfNotExist(String beanName ) { 
+		logger.debug("Checking context contain bean ({}): {}", beanName , applicationContext.containsBeanDefinition(beanName));
+		if( !applicationContext.containsBeanDefinition(beanName) ) {
+			
+			String key = String.format( "database.%s" , beanName ); 
 			for( String name : repository.getSetupApplicationProperties().getChildrenNames(key)) {
 				if( name.equals("pooledDataSourceProvider")) {
-					PooledDataSourceConfig config = new PooledDataSourceConfig();
-					config.setExportName(dataSourceName);
+					PooledDataSourceConfig config = new PooledDataSourceConfig(beanName); 
 					registerDataSourceBean(config);
 				}
 			} 
@@ -178,12 +191,38 @@ public class CommunityAdminService implements ApplicationContextAware , Manageme
 		return true; 
 	} 
 	
+	
+	public boolean isExists(String beanName,  Class<?> requiredType) {
+		boolean exist = false;
+		logger.debug( "beans for {}, {}", beanName, requiredType.getName() );
+		/*
+		for( String n : applicationContext.getBeanNamesForType(requiredType) )
+		{
+			if ( StringUtils.equals(beanName, n) ) {
+				exist = true;
+				break;
+			}
+		}
+		*/
+		
+		try {
+			Object obj = applicationContext.getBean(beanName, requiredType);
+			exist = true;
+			if(obj != null)
+				logger.debug("exist {}", obj.getClass().getName());
+		} catch (BeansException e) {
+		}
+		return exist;
+	}
+	
+	
 	// EDITING MAILSENDER SETTING.
 	
 	
 	
 	
 	// EDITING DATASOURCE SETTING.. 
+
 	public boolean testConnection(PooledDataSourceConfig config) { 
 		try {
 			DataSource dataSource = createDriverManagerDataSource(config);  
@@ -220,7 +259,7 @@ public class CommunityAdminService implements ApplicationContextAware , Manageme
 	}  
 	
 	protected void addConnectionProviderToXml (PooledDataSourceConfig config) {  
-		logger.debug( "Save ConnectionProvider ({})" , config.getExportName() );
+		logger.debug( "Save ConnectionProvider ({})" , config.getName() );
 		File file = repository.getFile(ApplicationConstants.DEFAULT_STARTUP_FILENAME); 
 		DataSourceEditor editor = new DataSourceEditor(file);
 		editor.removeDataSource("externalUserProviderDBPool"); 
@@ -235,19 +274,21 @@ public class CommunityAdminService implements ApplicationContextAware , Manageme
 	}
 	
 	protected void registerDataSourceBean(PooledDataSourceConfig dataSource) {
+		
 		DataSourceFactoryBean bean = new DataSourceFactoryBean();
-		bean.setProfileName(dataSource.getExportName()); 
+		bean.setProfileName(dataSource.getName()); 
 		AutowireCapableBeanFactory factory =  applicationContext.getAutowireCapableBeanFactory();
 		BeanDefinitionRegistry registry = (BeanDefinitionRegistry) factory; 
-		if(registry.containsBeanDefinition(dataSource.getExportName())) {
-			registry.removeBeanDefinition(dataSource.getExportName());
+		if(registry.containsBeanDefinition(dataSource.getName())) {
+			registry.removeBeanDefinition(dataSource.getName());
 		} 
 		GenericBeanDefinition myBeanDefinition = new GenericBeanDefinition();
 		MutablePropertyValues mutablePropertyValues = new MutablePropertyValues();
-		mutablePropertyValues.add("profileName", dataSource.getExportName());
+		mutablePropertyValues.add("profileName", dataSource.getName());
 		myBeanDefinition.setBeanClass(DataSourceFactoryBean.class);
 		myBeanDefinition.setPropertyValues(mutablePropertyValues);
-		registry.registerBeanDefinition(dataSource.getExportName(), myBeanDefinition); 
+		registry.registerBeanDefinition(dataSource.getName(), myBeanDefinition); 
+		
 	}
 	
 	protected void registerMailSenderBean(MailServicesConfig config, boolean overwriteIfExist) { 

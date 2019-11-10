@@ -1,4 +1,5 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>architecture.community</groupId>
@@ -14,7 +15,7 @@
 			<email>donghyuck.son@gmail.com</email>
 		</developer>
 	</developers>
-	
+
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<javac.src.version>1.8</javac.src.version>
@@ -26,7 +27,7 @@
 		<project.dependency.spring-security.version>4.2.12.RELEASE</project.dependency.spring-security.version>
 		<javadocExecutable>${java.home}/../bin/javadoc</javadocExecutable>
 	</properties>
-	
+
 	<dependencies>
 		<!-- FRAMEWORK START -->
 		<dependency>
@@ -41,7 +42,7 @@
 			</exclusions>
 		</dependency>
 		<!-- FRAMEWORK END -->
-				
+
 		<!-- SPRINGFRAMEWORK START -->
 		<dependency>
 			<groupId>org.springframework</groupId>
@@ -57,12 +58,12 @@
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-webmvc</artifactId>
 			<version>${project.dependency.spring.version}</version>
-		</dependency> 
+		</dependency>
 		<dependency>
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-aspects</artifactId>
 			<version>${project.dependency.spring.version}</version>
-		</dependency> 		
+		</dependency>
 		<!-- SPRINGFRAMEWORK END -->
 
 		<!-- SPRINGFRAMEWORK.SECURITY START -->
@@ -89,30 +90,30 @@
 			<version>${project.dependency.spring-security.version}</version>
 			<scope>test</scope>
 		</dependency>
-		
+
 		<dependency>
 			<groupId>org.springframework.security</groupId>
 			<artifactId>spring-security-taglibs</artifactId>
 			<version>${project.dependency.spring-security.version}</version>
 		</dependency>
 		<!-- SPRINGFRAMEWORK.SECURITY END -->
-		
+
 		<!-- SPRINGFRAMEWORK.MOBILE START -->
 		<dependency>
-		 <groupId>org.springframework.mobile</groupId>
-		 <artifactId>spring-mobile-device</artifactId>
-		 <version>1.1.0.RELEASE</version>
+			<groupId>org.springframework.mobile</groupId>
+			<artifactId>spring-mobile-device</artifactId>
+			<version>1.1.0.RELEASE</version>
 		</dependency>
 		<!-- SPRINGFRAMEWORK.MOBILE END -->
 
 		<!-- https://mvnrepository.com/artifact/org.springframework.integration/spring-integration-groovy -->
 		<dependency>
-		    <groupId>org.springframework.integration</groupId>
-		    <artifactId>spring-integration-groovy</artifactId>
-		    <version>4.3.20.RELEASE</version>
+			<groupId>org.springframework.integration</groupId>
+			<artifactId>spring-integration-groovy</artifactId>
+			<version>4.3.20.RELEASE</version>
 		</dependency>
-				
-		
+
+
 		<!-- SERVLET/JSP START -->
 		<dependency>
 			<groupId>javax.servlet</groupId>
@@ -126,26 +127,46 @@
 			<version>1.2</version>
 		</dependency>
 		<!-- SERVLET/JSP END -->
-		
+
+		<!-- JSP JSTL/TAG START -->
 		<dependency>
-		    <groupId>com.sun.mail</groupId>
-		    <artifactId>javax.mail</artifactId>
-		    <version>1.5.6</version>
+			<groupId>taglibs</groupId>
+			<artifactId>standard</artifactId>
+			<version>1.1.2</version>
+			<scope>compile</scope>
 		</dependency>
-		
+		<dependency>
+			<groupId>org.apache.taglibs</groupId>
+			<artifactId>taglibs-standard-impl</artifactId>
+			<version>1.2.5</version>
+			<scope>compile</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.taglibs</groupId>
+			<artifactId>taglibs-standard-spec</artifactId>
+			<version>1.2.5</version>
+			<scope>compile</scope>
+		</dependency>
+		<!-- JSP JSTL/TAG END -->
+		<dependency>
+			<groupId>com.sun.mail</groupId>
+			<artifactId>javax.mail</artifactId>
+			<version>1.5.6</version>
+		</dependency>
+
 		<!-- JACKSON START -->
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-core</artifactId>
 			<version>2.9.9</version>
 		</dependency>
-		
+
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-annotations</artifactId>
 			<version>2.9.9</version>
 		</dependency>
-				
+
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-databind</artifactId>
@@ -153,14 +174,14 @@
 		</dependency>
 
 		<dependency>
-		  <groupId>com.fasterxml.jackson.dataformat</groupId>
-		  <artifactId>jackson-dataformat-xml</artifactId>
-		  <version>2.9.9</version>
+			<groupId>com.fasterxml.jackson.dataformat</groupId>
+			<artifactId>jackson-dataformat-xml</artifactId>
+			<version>2.9.9</version>
 		</dependency>
-		
+
 		<!-- JACKSON END -->
-				
-		<!-- LOG START -->	
+
+		<!-- LOG START -->
 		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-api</artifactId>
@@ -178,91 +199,91 @@
 			<type>jar</type>
 			<scope>test</scope>
 		</dependency>
-		<!-- LOG END -->		
+		<!-- LOG END -->
 
 		<dependency>
 			<groupId>javax.inject</groupId>
 			<artifactId>javax.inject</artifactId>
 			<version>1</version>
 		</dependency>
-		
+
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
 			<version>4.12</version>
 			<scope>test</scope>
-		</dependency>		
+		</dependency>
 
-		<!--  SITEMESH START -->
+		<!-- SITEMESH START -->
 		<!-- https://mvnrepository.com/artifact/org.sitemesh/sitemesh -->
 		<dependency>
-		    <groupId>org.sitemesh</groupId>
-		    <artifactId>sitemesh</artifactId>
-		    <version>3.0.1</version>
+			<groupId>org.sitemesh</groupId>
+			<artifactId>sitemesh</artifactId>
+			<version>3.0.1</version>
 		</dependency>
-		<!--  SITEMESH END -->
+		<!-- SITEMESH END -->
 
 		<!-- https://mvnrepository.com/artifact/commons-digester/commons-digester -->
 		<!-- menu -->
 		<dependency>
-		    <groupId>commons-digester</groupId>
-		    <artifactId>commons-digester</artifactId>
-		    <version>2.1</version>
+			<groupId>commons-digester</groupId>
+			<artifactId>commons-digester</artifactId>
+			<version>2.1</version>
 		</dependency>
 
-		
+
 		<!-- https://mvnrepository.com/artifact/org.apache.commons/commons-lang3 -->
 		<dependency>
-		    <groupId>org.apache.commons</groupId>
-		    <artifactId>commons-lang3</artifactId>
-		    <version>3.0</version>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-lang3</artifactId>
+			<version>3.0</version>
 		</dependency>
 
 		<!-- https://mvnrepository.com/artifact/commons-fileupload/commons-fileupload -->
 		<dependency>
-		    <groupId>commons-fileupload</groupId>
-		    <artifactId>commons-fileupload</artifactId>
-		    <version>1.4</version>
+			<groupId>commons-fileupload</groupId>
+			<artifactId>commons-fileupload</artifactId>
+			<version>1.4</version>
 		</dependency>
-		
-		
+
+
 		<!-- https://mvnrepository.com/artifact/org.apache.poi/poi -->
 		<dependency>
-		    <groupId>org.apache.poi</groupId>
-		    <artifactId>poi</artifactId>
-		    <version>3.16</version>
+			<groupId>org.apache.poi</groupId>
+			<artifactId>poi</artifactId>
+			<version>3.16</version>
 		</dependency>
 
 		<!-- https://mvnrepository.com/artifact/org.apache.poi/poi-ooxml -->
 		<dependency>
-		    <groupId>org.apache.poi</groupId>
-		    <artifactId>poi-ooxml</artifactId>
-		    <version>3.16</version>
+			<groupId>org.apache.poi</groupId>
+			<artifactId>poi-ooxml</artifactId>
+			<version>3.16</version>
 		</dependency>
 
 		<!-- https://mvnrepository.com/artifact/net.sf.ehcache/ehcache -->
 		<dependency>
-		    <groupId>net.sf.ehcache</groupId>
-		    <artifactId>ehcache</artifactId>
-		    <version>2.10.6</version>
+			<groupId>net.sf.ehcache</groupId>
+			<artifactId>ehcache</artifactId>
+			<version>2.10.6</version>
 		</dependency>
 
-    
+
 		<!-- https://mvnrepository.com/artifact/mysql/mysql-connector-java -->
 		<dependency>
-		    <groupId>mysql</groupId>
-		    <artifactId>mysql-connector-java</artifactId>
-		    <version>8.0.16</version>
+			<groupId>mysql</groupId>
+			<artifactId>mysql-connector-java</artifactId>
+			<version>8.0.16</version>
 		</dependency>
 
 
 		<!-- https://mvnrepository.com/artifact/net.coobird/thumbnailator -->
 		<dependency>
-		    <groupId>net.coobird</groupId>
-		    <artifactId>thumbnailator</artifactId>
-		    <version>0.4.8</version>
+			<groupId>net.coobird</groupId>
+			<artifactId>thumbnailator</artifactId>
+			<version>0.4.8</version>
 		</dependency>
-		
+
 		<!-- https://mvnrepository.com/artifact/org.apache.pdfbox/pdfbox -->
 		<dependency>
 			<groupId>org.apache.pdfbox</groupId>
@@ -272,12 +293,19 @@
 
 		<!-- https://mvnrepository.com/artifact/org.apache.tika/tika-core -->
 		<dependency>
-		    <groupId>org.apache.tika</groupId>
-		    <artifactId>tika-core</artifactId>
-		    <version>1.22</version>
+			<groupId>org.apache.tika</groupId>
+			<artifactId>tika-core</artifactId>
+			<version>1.22</version>
 		</dependency>
-		
-										
+
+		<!-- https://mvnrepository.com/artifact/org.jsoup/jsoup -->
+		<dependency>
+			<groupId>org.jsoup</groupId>
+			<artifactId>jsoup</artifactId>
+			<version>1.12.1</version>
+		</dependency>
+
+
 	</dependencies>
 	<build>
 		<plugins>
@@ -316,7 +344,7 @@
 							<goal>jar</goal>
 						</goals>
 					</execution>
-				</executions> 
+				</executions>
 			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>

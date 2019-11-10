@@ -26,4 +26,5 @@ public interface MenuService {
 	
 	public abstract void refresh(Menu menu) throws MenuNotFoundException ;
 	
+	public abstract boolean hasMenu(String name);
 }

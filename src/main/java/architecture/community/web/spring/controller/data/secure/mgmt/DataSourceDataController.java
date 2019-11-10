@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.List;
 
 import javax.inject.Inject;
+import javax.sql.DataSource;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.context.request.NativeWebRequest;
 
+import architecture.community.services.CommunityAdminService;
 import architecture.community.web.model.ItemList;
 import architecture.ee.component.editor.DataSourceConfig;
 import architecture.ee.component.editor.DataSourceConfigReader;
@@ -35,6 +37,10 @@ public class DataSourceDataController {
 	@Inject
 	@Qualifier("configService")
 	private ConfigService configService;
+	
+	@Inject
+	@Qualifier("adminService")
+	private CommunityAdminService adminService;
 	
 	public DataSourceDataController() { 
 	
@@ -74,7 +80,10 @@ public class DataSourceDataController {
 		List<DataSourceConfig> list = new ArrayList<DataSourceConfig>();
 		DataSourceConfigReader reader = getDataSourceConfigReader();
 		for( String name : names ) {
-			list.add(reader.getDataSoruceConfig(name));
+			DataSourceConfig dsc = reader.getDataSoruceConfig(name);
+			dsc.setActive(adminService.isExists(dsc.getBeanName(), DataSource.class)); 
+			list.add(dsc);
+			
 		}
 		return list;
 	}

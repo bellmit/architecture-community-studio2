@@ -1,5 +1,6 @@
 package architecture.community.user;
 
+import java.io.Serializable;
 import java.util.Calendar;
 import java.util.Date;
 
@@ -9,7 +10,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import architecture.community.model.json.JsonDateDeserializer;
 import architecture.community.model.json.JsonDateSerializer;
 
-public class AvatarImage {
+public class AvatarImage implements Serializable {
 
 	public static final String DEFAULT_THUMBNAIL_CONTENT_TYPE = "image/png";
 

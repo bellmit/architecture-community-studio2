@@ -11,6 +11,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.access.annotation.Secured;
+import org.springframework.security.acls.domain.ObjectIdentityImpl;
+import org.springframework.security.acls.model.AccessControlEntry;
+import org.springframework.security.acls.model.ObjectIdentity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -21,6 +24,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.context.request.NativeWebRequest;
 
 import architecture.community.exception.NotFoundException;
+import architecture.community.model.Models;
 import architecture.community.model.Property;
 import architecture.community.page.DefaultBodyContent;
 import architecture.community.page.DefaultPage;
@@ -181,6 +185,28 @@ public class PageDataController {
 		Page page = pageService.getPage(pageId, versionId);
 		return PageView.build(page, includeBodyContent);
 	}	
+	
+	
+	@Secured({ "ROLE_ADMINISTRATOR", "ROLE_SYSTEM", "ROLE_DEVELOPER"})
+	@RequestMapping(value = "/pages/{pageId:[\\p{Digit}]+}/delete.json", method = { RequestMethod.POST, RequestMethod.GET })
+	@ResponseBody
+	public Result deletePage(@PathVariable Long pageId,
+			@RequestParam(value = "versionId", defaultValue = "1") Integer versionId,  
+			NativeWebRequest request)
+			throws NotFoundException {
+		
+		Result result = Result.newResult(); 
+		
+		Page page = pageService.getPage(pageId, versionId);
+		log.debug("delete page by id : {}", page.getPageId());
+		pageService.deletePage(page); 
+		
+		ObjectIdentity identity = new ObjectIdentityImpl(Models.PAGE.getObjectClass(), page.getPageId()); 
+		communityAclService.deleteAcl(identity, true);
+		
+		return result;
+	
+	}		
 	
 	@Secured({ "ROLE_ADMINISTRATOR", "ROLE_SYSTEM", "ROLE_DEVELOPER"})
 	@RequestMapping(value = "/pages/{pageId:[\\p{Digit}]+}/properties/list.json", method = { RequestMethod.POST, RequestMethod.GET })

@@ -15,9 +15,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import architecture.community.model.Models;
 import architecture.community.page.Page;
 import architecture.community.page.PageNotFoundException;
 import architecture.community.page.PageService;
+import architecture.community.services.CommunitySpringEventPublisher;
+import architecture.community.services.audit.event.AuditLogEvent;
+import architecture.community.util.SecurityHelper;
 import architecture.community.web.util.ServletUtils;
 import architecture.ee.service.ConfigService;
 
@@ -39,6 +43,9 @@ public class AccountsPageController {
 		return pageService != null;
 	}
 	
+	@Autowired(required=false)
+	@Qualifier("communityEventPublisher")
+	private CommunitySpringEventPublisher communitySpringEventPublisher;
 	
 	@RequestMapping(value={"/signin","/login"}, method = { RequestMethod.POST, RequestMethod.GET } )
     public String displayLoginPage(
@@ -59,7 +66,7 @@ public class AccountsPageController {
 			model.addAttribute("targetUrl", targetUrl);
 			model.addAttribute("loginUpdate", true);
 		} 
-		return getPageView("login.html", "/accounts/login", model);
+		return getPageView(request, response,"login.html", "/accounts/login", model);
     }
 
 	@RequestMapping(value={"/join","/signup", "/register"}, method = { RequestMethod.POST, RequestMethod.GET } )
@@ -69,7 +76,7 @@ public class AccountsPageController {
     		Model model) {		
 		ServletUtils.setContentType(null, response);		
 		model.addAttribute("returnUrl", returnUrl);		 
-		return getPageView("join.html", "/accounts/register", model);
+		return getPageView(request, response, "join.html", "/accounts/register", model);
     }
 	
 	
@@ -83,7 +90,7 @@ public class AccountsPageController {
 	}
 	
 	
-	private String getPageView(String filename, String defaultView , Model model) {
+	private String getPageView(HttpServletRequest request, HttpServletResponse response, String filename, String defaultView , Model model) {
 		String view = defaultView ;
 		int version = 1;
 		if( isSetPageService() )
@@ -97,7 +104,12 @@ public class AccountsPageController {
 				view = page.getTemplate();
 				view = StringUtils.removeEnd(view, ".ftl");					
 			}
+			if(communitySpringEventPublisher!=null)
+				communitySpringEventPublisher.fireEvent((new AuditLogEvent.Builder(request, response, SecurityHelper.getAuthentication())).object(Models.PAGE.getObjectType(), page.getPageId()).action(AuditLogEvent.READ_ACTION).label(page.getName()).build());
+			
 		} catch (PageNotFoundException e) {
+			if(communitySpringEventPublisher!=null)
+				communitySpringEventPublisher.fireEvent((new AuditLogEvent.Builder(request, response, SecurityHelper.getAuthentication())).object(Models.PAGE.getObjectType(), -1L).action(AuditLogEvent.READ_ACTION).label(view).build());
 			
 		}
 		logger.debug("VIEW: {}.", view );
