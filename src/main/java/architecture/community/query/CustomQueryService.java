@@ -13,7 +13,9 @@ import architecture.community.web.model.DataSourceRequest;
 
 public interface CustomQueryService {
 
-	public List<Map<String, Object>> list( String statement ) ;	
+	public List<Map<String, Object>> list( String statement ) ;	 
+	
+	public <T> List<T> list( String statement ,  RowMapper<T> rowmapper);
 	
 	public List<Map<String, Object>> list( String statement , Map<String, Object> data) ;	
 	

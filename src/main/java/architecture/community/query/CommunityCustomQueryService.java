@@ -60,6 +60,14 @@ public class CommunityCustomQueryService implements CustomQueryService {
 		return list(dataSourceRequest, getColumnMapRowMapper());
 	}
 	
+ 
+	public <T> List<T> list(String statement, RowMapper<T> rowmapper) {
+		DataSourceRequest dataSourceRequest = new DataSourceRequest();
+		dataSourceRequest.setStatement(statement);
+		return list(dataSourceRequest, rowmapper );
+	}
+	
+	
 	public List<Map<String, Object>> list(String statement, Map<String, Object> data) {
 		DataSourceRequest dataSourceRequest = new DataSourceRequest();
 		dataSourceRequest.setStatement(statement);
@@ -247,5 +255,6 @@ public class CommunityCustomQueryService implements CustomQueryService {
 	protected RowMapper<Map<String, Object>> getColumnMapRowMapper() {
 		return new ColumnMapRowMapper();
 	}
+
 
 }

@@ -33,7 +33,9 @@ import architecture.community.security.spring.acls.CommunityAclService;
 import architecture.community.security.spring.acls.PermissionsBundle;
 import architecture.community.share.SharedLink;
 import architecture.community.share.SharedLinkService;
+import architecture.community.util.CommunityConstants;
 import architecture.community.util.SecurityHelper;
+import architecture.community.viewcount.ViewCountService;
 import architecture.community.web.util.ServletUtils;
 import architecture.ee.service.ConfigService;
 import architecture.ee.util.StringUtils;
@@ -63,6 +65,10 @@ public class DownloadDataController {
 	@Inject
 	@Qualifier("attachmentService")
 	private AttachmentService attachmentService;
+	
+	@Autowired(required=false)
+	@Qualifier("viewCountService")
+	private ViewCountService viewCountService;
 	
 	private boolean isAllowed(Image image) throws NotFoundException { 
 		if(SecurityHelper.isUserInRole("ROLE_DEVELOPER, ROLE_ADMINISTRATOR, ROLE_SYSTEM") ) {
@@ -113,6 +119,9 @@ public class DownloadDataController {
 	    response.flushBuffer();
 	}
 	
+	
+	
+	
 	@RequestMapping(value = "/images/{linkId}", method = RequestMethod.GET)
 	@ResponseBody
 	public void downloadImageByLink(
@@ -142,6 +151,7 @@ public class DownloadDataController {
 					contentType = image.getContentType();
 					contentLength = image.getSize();
 				}
+				
 				response.setContentType(contentType);
 				response.setContentLength(contentLength);
 				IOUtils.copy(input, response.getOutputStream());
@@ -194,7 +204,7 @@ public class DownloadDataController {
 						} else {
 							input = imageService.getImageInputStream(image);
 							contentType = image.getContentType();
-							contentLength = image.getSize();
+							contentLength = image.getSize();  
 						}
 						response.setContentType(contentType);
 						response.setContentLength(contentLength);
@@ -253,11 +263,17 @@ public class DownloadDataController {
 	    				response.addHeader("Location", url);
 	    			}		
 				} else {
-					input = attachmentService.getAttachmentInputStream(attachment);
+					input = attachmentService.getAttachmentInputStream(attachment); 
+					if( viewCountService != null &&  configService.getApplicationBooleanProperty(CommunityConstants.SERVICES_VIEWCOUNT_ENABLED_PROP_NAME, false)) {
+						log.debug("add view count attachment '{}'", attachment.getAttachmentId());
+						viewCountService.addViewCount(Models.ATTACHMENT.getObjectType(), attachment.getAttachmentId());
+					}
+					
 					contentType = attachment.getContentType();
 					contentLength = attachment.getSize();
 					response.setContentType(contentType);
 					response.setContentLength(contentLength);
+					
 					IOUtils.copy(input, response.getOutputStream()); 
 					response.setHeader("contentDisposition", "attachment;filename=" + ServletUtils.getEncodedFileName(attachment.getName()));
 					response.flushBuffer();					

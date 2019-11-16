@@ -4,6 +4,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+import architecture.community.image.Image;
 import architecture.community.model.Property;
 
 public class Utils {
@@ -18,4 +24,21 @@ public class Utils {
 		return list;
 	} 
 	
+	/**
+	 * extract data-image-link attr  value as List in img tag.
+	 * @param content
+	 * @return
+	 */
+	public static List<String> getImageLinksFromHtml(String content){ 
+		Document doc = Jsoup.parse(content);
+		Elements elements = doc.select("img");
+		List<String> list = new ArrayList<String>();
+		for (Element element : elements ) {
+			Map<String, String> data = element.dataset();
+			if( element.hasAttr("data-image-link") ) {					
+				list.add(element.attr("data-image-link"));
+			} 
+		}
+		return list;
+	}
 }

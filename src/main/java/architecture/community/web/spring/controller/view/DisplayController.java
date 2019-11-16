@@ -116,13 +116,13 @@ public class DisplayController implements ServletContextAware {
 		
 		if(StringUtils.isNotEmpty(page.getScript())) {
 			try {
-				View _view = communityGroovyService.getService(page.getScript(), View.class, true);
+				View _view = communityGroovyService.getService(page.getScript(), View.class);
 				_view.render((Map) model, request, response); 
 			} catch (Exception e) { 
 				log.error("Error in render.", e);
 			}
 		} 
-		
+
 		String view = page.getTemplate();
 		if( StringUtils.isEmpty(view)) {
 			view = "/page.ftl";	
@@ -203,7 +203,7 @@ public class DisplayController implements ServletContextAware {
  				model.addAttribute("__variables", variables);  
  				view = page.getTemplate();
  				if(StringUtils.isNotEmpty(page.getScript())) {
- 					View _view = communityGroovyService.getService(page.getScript(), View.class, true );
+ 					View _view = communityGroovyService.getService(page.getScript(), View.class );
  					try {
 						_view.render((Map) model, request, response);
 					} catch (Exception e) { 

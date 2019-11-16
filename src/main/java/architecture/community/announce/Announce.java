@@ -47,6 +47,7 @@ public class Announce extends PropertyModelObjectAwareSupport implements Seriali
 	private Date modifiedDate;
 	
 	public Announce() {  
+		
 		super(UNKNOWN_OBJECT_TYPE, UNKNOWN_OBJECT_ID);
 		this.announceId = UNKNOWN_OBJECT_ID;
 		this.subject = null;

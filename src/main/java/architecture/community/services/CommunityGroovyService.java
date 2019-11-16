@@ -82,7 +82,7 @@ public class CommunityGroovyService implements InitializingBean, ResourceLoaderA
 			new CacheLoader<ScriptServiceKey, Object>(){			
 				public Object load(ScriptServiceKey key) throws Exception {
 					log.debug("creating new refreshable script service.");		
-					return getefreshableService(key.scriptSourceLocator, key.requiredType);
+					return getRefreshableService(key.scriptSourceLocator, key.requiredType);
 				}
 			} 
 		);
@@ -165,7 +165,10 @@ public class CommunityGroovyService implements InitializingBean, ResourceLoaderA
 	}
 	
 	
-	public <T> T getefreshableService(String scriptSourceLocator, Class<T> requiredType) {  
+	public <T> T getRefreshableService(String scriptSourceLocator, Class<T> requiredType) {  
+		
+		log.debug("load freshable script {} - {}", scriptSourceLocator, requiredType.getName());
+		
 		GroovyScriptFactory factory = getGroovyScriptFactory(scriptSourceLocator);
 		AutowireCapableBeanFactory beanFactory = applicationContext.getAutowireCapableBeanFactory();
 		beanFactory.autowireBean(factory);
@@ -179,7 +182,8 @@ public class CommunityGroovyService implements InitializingBean, ResourceLoaderA
 		introduction.suppressInterface(TargetSource.class); 
 		proxyFactory.addAdvice(introduction);  
 		T obj =  (T) proxyFactory.getProxy(); 
-		applicationContext.getAutowireCapableBeanFactory().autowireBean(obj);		
+		applicationContext.getAutowireCapableBeanFactory().autowireBean(obj);
+		
 		return obj;	
 	}
 	
@@ -209,6 +213,7 @@ public class CommunityGroovyService implements InitializingBean, ResourceLoaderA
 	}
 	
 	static class ScriptServiceKey implements Serializable {
+		
 		String scriptSourceLocator ;
 		Class<?> requiredType ; 
 		boolean refreshable;

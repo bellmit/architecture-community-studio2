@@ -79,6 +79,23 @@ public class ResourcesDataController {
 	private ResourceType getResourceType(String name ) {
 		return ResourceType.valueOf(name.toUpperCase());
 	}
+
+	@Secured({ "ROLE_ADMINISTRATOR", "ROLE_SYSTEM", "ROLE_DEVELOPER"})
+	@RequestMapping(value = "/resources/0/get.json", method = { RequestMethod.POST, RequestMethod.GET })
+    @ResponseBody
+    public FileInfo getContentByPath(
+    		@PathVariable String type, 
+    		@RequestParam(value = "path", defaultValue = "", required = false) String path, 
+    		NativeWebRequest request) throws NotFoundException, IOException {  
+		 
+		
+		Resource resouce = loader.getResource(path); 
+		File targetFile = resouce.getFile(); 
+		FileInfo fileInfo = new FileInfo(targetFile); 
+		fileInfo.setFileContent(targetFile.isDirectory() ? "" : FileUtils.readFileToString(targetFile, "UTF-8"));
+		return fileInfo;
+    } 	
+	
 	@Secured({ "ROLE_ADMINISTRATOR", "ROLE_SYSTEM", "ROLE_DEVELOPER"})
 	@RequestMapping(value = "/resources/{type}/create.json", method = { RequestMethod.POST, RequestMethod.GET })
 	@ResponseBody
@@ -217,6 +234,9 @@ public class ResourcesDataController {
 		fileInfo.setFileContent(target.isDirectory() ? "" : FileUtils.readFileToString(target, "UTF-8"));  
 		return fileInfo;
     } 	 
+	
+	
+	
 	
     protected String getResourcePathByType(ResourceType type) { 
 		String path = null;

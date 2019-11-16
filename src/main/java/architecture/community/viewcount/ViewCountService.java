@@ -27,14 +27,41 @@ public interface ViewCountService {
 	public abstract void clearCount(Page page);
 	
 	
+	/**
+	 * objectType , objectId 객체에 대한 뷰 카운트를 증가시킨다.
+	 *  
+	 * @param objectType
+	 * @param objectId
+	 */
 	public abstract void addViewCount(int objectType, long objectId );
 
+	
+	/**
+	 * objectType , objectId 객체에 대한 뷰 카운트 값을 리턴한다. 
+	 *  
+	 * @param objectType
+	 * @param objectId
+	 */
 	public abstract int getViewCount(int objectType, long objectId );
 	
+	/**
+	 * objectType , objectId 객체에 대한 뷰 카운트 값을 초기화 한다. (초기화 값: 0)
+	 * 
+	 * @param objectType
+	 * @param objectId
+	 */
 	public abstract void clearCount(int objectType, long objectId );
 	
 	
+	/**
+	 * 메모리 상의 뷰 카운터 값을 데이터베이스에 반영한다.
+	 * 이 함수는 스케줄러에의하여 주기적으로 실행된다.
+	 */
 	public abstract void updateViewCounts();
 	
+	/**
+	 * 뷰 카운터 서비스가 활성 여부를 리턴한다.
+	 * @return
+	 */
 	public abstract boolean isViewCountsEnabled() ;
 }

@@ -17,7 +17,7 @@
 package architecture.community.viewcount;
 
 public class ViewCountInfo {
-
+	
 	private int entityType;
 	private long entityId;
 	private int count;

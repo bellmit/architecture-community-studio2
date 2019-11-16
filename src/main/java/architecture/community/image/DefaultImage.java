@@ -21,6 +21,7 @@ import java.io.InputStream;
 import java.util.Date;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
@@ -164,6 +165,8 @@ public class DefaultImage extends PropertyModelObjectAwareSupport implements Ima
 	public void setModifiedDate(Date modifiedDate) {
 		this.modifiedDate = modifiedDate;
 	} 
+	
+	@JsonProperty
 	public ImageLink getImageLink() {
 		return imageLink;
 	}

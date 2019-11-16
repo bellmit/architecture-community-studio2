@@ -85,8 +85,7 @@ public class WelcomePageController {
 				} catch (Exception e) {  
 					log.warn(e.getMessage(), e);
 				}
-			} 
-				
+			}
 			
 			if( StringUtils.isNotEmpty( page.getTemplate() ) )
 			{
