@@ -88,10 +88,12 @@ public class ServicesProfileDataController {
     } 
 	
 	private ProfileServiceConfig getProfileServiceConfig() { 
+		
 		ProfileServiceConfig config = new ProfileServiceConfig();
 		config.cacheable = configService.getApplicationBooleanProperty("services.user.profile.cacheable", false);
 		config.enabled = configService.getApplicationBooleanProperty("services.user.profile.enabled", false);
 		config.scriptSource = "/WEB-INF/groovy-script/services/customUserProfileService.groovy";
+		
 		return config;
 	}
 	

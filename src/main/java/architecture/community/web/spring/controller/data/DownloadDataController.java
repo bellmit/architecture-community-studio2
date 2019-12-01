@@ -49,59 +49,61 @@ public class DownloadDataController {
 	@Inject
 	@Qualifier("imageService")
 	private ImageService imageService;
-	
+
 	@Inject
 	@Qualifier("configService")
 	private ConfigService configService;
-	
-	@Autowired(required = false) 
+
+	@Autowired(required = false)
 	@Qualifier("aclService")
-	private CommunityAclService aclService;	
-	
-	@Autowired(required = false) 
+	private CommunityAclService aclService;
+
+	@Autowired(required = false)
 	@Qualifier("sharedLinkService")
 	private SharedLinkService sharedLinkService;
-	
+
 	@Inject
 	@Qualifier("attachmentService")
 	private AttachmentService attachmentService;
-	
-	@Autowired(required=false)
+
+	@Autowired(required = false)
 	@Qualifier("viewCountService")
 	private ViewCountService viewCountService;
-	
-	private boolean isAllowed(Image image) throws NotFoundException { 
-		if(SecurityHelper.isUserInRole("ROLE_DEVELOPER, ROLE_ADMINISTRATOR, ROLE_SYSTEM") ) {
+
+	private boolean isAllowed(Image image) throws NotFoundException {
+		if (SecurityHelper.isUserInRole("ROLE_DEVELOPER, ROLE_ADMINISTRATOR, ROLE_SYSTEM")) {
 			return true;
-		} 
+		}
 		ImageLink link = imageService.getImageLink(image);
-		if( link.isPublicShared() )
-		{
+		if (link.isPublicShared()) {
 			return true;
-		} 
-		PermissionsBundle bundle = aclService.getPermissionBundle( SecurityHelper.getAuthentication(), Models.IMAGE.getObjectClass(), image.getImageId() );
-		if(bundle.isRead())
-			return true;
-		return false;
-	}
-	
-	private boolean isAllowed(Attachment attachment) throws NotFoundException { 
-		if(SecurityHelper.isUserInRole("ROLE_DEVELOPER, ROLE_ADMINISTRATOR, ROLE_SYSTEM") ) {
-			return true;
-		} 
-		SharedLink link = sharedLinkService.getSharedLink(Models.ATTACHMENT.getObjectType(), attachment.getAttachmentId(), false );
-		if( link.isPublicShared() )
-		{
-			return true;
-		} 
-		PermissionsBundle bundle = aclService.getPermissionBundle( SecurityHelper.getAuthentication(), Models.ATTACHMENT.getObjectClass(), attachment.getAttachmentId() );
-		if(bundle.isRead())
+		}
+		PermissionsBundle bundle = aclService.getPermissionBundle(SecurityHelper.getAuthentication(),
+				Models.IMAGE.getObjectClass(), image.getImageId());
+		if (bundle.isRead())
 			return true;
 		return false;
 	}
-	
+
+	private boolean isAllowed(Attachment attachment) throws NotFoundException {
+		if (SecurityHelper.isUserInRole("ROLE_DEVELOPER, ROLE_ADMINISTRATOR, ROLE_SYSTEM")) {
+			return true;
+		}
+		SharedLink link = sharedLinkService.getSharedLink(Models.ATTACHMENT.getObjectType(),
+				attachment.getAttachmentId(), false);
+		if (link.isPublicShared()) {
+			return true;
+		}
+		PermissionsBundle bundle = aclService.getPermissionBundle(SecurityHelper.getAuthentication(),
+				Models.ATTACHMENT.getObjectClass(), attachment.getAttachmentId());
+		if (bundle.isRead())
+			return true;
+		return false;
+	}
+
 	/**
 	 * 인자로 전달된 BASE64 데이터를 파일 형태로 변환하여 응답한다.
+	 * 
 	 * @param fileName
 	 * @param base64
 	 * @param contentType
@@ -110,35 +112,31 @@ public class DownloadDataController {
 	 */
 	@RequestMapping(value = "/proxy", method = RequestMethod.POST)
 	@ResponseBody
-	public void save(String fileName, String base64, String contentType, HttpServletResponse response) throws IOException {
-	    response.setHeader("Content-Disposition", "attachment;filename=" + fileName); 
-	    response.setContentType(contentType); 
-	    byte[] data = DatatypeConverter.parseBase64Binary(base64); 
-	    response.setContentLength(data.length);
-	    response.getOutputStream().write(data);
-	    response.flushBuffer();
+	public void save(String fileName, String base64, String contentType, HttpServletResponse response)
+			throws IOException {
+		response.setHeader("Content-Disposition", "attachment;filename=" + fileName);
+		response.setContentType(contentType);
+		byte[] data = DatatypeConverter.parseBase64Binary(base64);
+		response.setContentLength(data.length);
+		response.getOutputStream().write(data);
+		response.flushBuffer();
 	}
-	
-	
-	
-	
+
 	@RequestMapping(value = "/images/{linkId}", method = RequestMethod.GET)
 	@ResponseBody
-	public void downloadImageByLink(
-			@PathVariable("linkId") String linkId, 
+	public void downloadImageByLink(@PathVariable("linkId") String linkId,
 			@RequestParam(value = "thumbnail", defaultValue = "false", required = false) boolean thumbnail,
 			@RequestParam(value = "width", defaultValue = "150", required = false) Integer width,
 			@RequestParam(value = "height", defaultValue = "150", required = false) Integer height,
-			HttpServletRequest request,
-			HttpServletResponse response) throws IOException {
-		try { 
-			
-			Image image = imageService.getImageByImageLink(linkId); 
+			HttpServletRequest request, HttpServletResponse response) throws IOException {
+		try {
+
+			Image image = imageService.getImageByImageLink(linkId);
 			// checking security ..
-			if (image != null) { 
-				if( !isAllowed(image))
-					throw new UnAuthorizedException(); 				
-				
+			if (image != null) {
+				if (!isAllowed(image))
+					throw new UnAuthorizedException();
+
 				InputStream input;
 				String contentType;
 				int contentLength;
@@ -151,140 +149,142 @@ public class DownloadDataController {
 					contentType = image.getContentType();
 					contentLength = image.getSize();
 				}
-				
+
 				response.setContentType(contentType);
 				response.setContentLength(contentLength);
 				IOUtils.copy(input, response.getOutputStream());
 				response.flushBuffer();
 			}
-			
+
 		} catch (Exception e) {
 			log.warn(e.getMessage(), e);
 			response.setStatus(301);
-			String url = ServletUtils.getContextPath(request) + configService.getApplicationProperty("components.download.images.no-image-url", "/images/no-image.jpg");
+			String url = ServletUtils.getContextPath(request) + configService
+					.getApplicationProperty("components.download.images.no-image-url", "/images/no-image.jpg");
 			response.addHeader("Location", url);
 		}
 	}
-	
-	
-	@RequestMapping(value = "/images/{imageId:[\\p{Digit}]+}/{filename:.+}", method = { RequestMethod.GET , RequestMethod.POST })
+
+	@RequestMapping(value = "/images/{imageId:[\\p{Digit}]+}/{filename:.+}", method = { RequestMethod.GET,
+			RequestMethod.POST })
 	@ResponseBody
-	public void downloadImage (
-		@PathVariable("imageId") Long imageId, 
-		@PathVariable("filename") String filename,
-		@RequestParam(value = "thumbnail", defaultValue = "false", required = false) boolean thumbnail,
-		@RequestParam(value = "width", defaultValue = "150", required = false) Integer width,
-		@RequestParam(value = "height", defaultValue = "150", required = false) Integer height,
-		HttpServletRequest request, HttpServletResponse response) throws IOException {
-		
+	public void downloadImage(@PathVariable("imageId") Long imageId, @PathVariable("filename") String filename,
+			@RequestParam(value = "thumbnail", defaultValue = "false", required = false) boolean thumbnail,
+			@RequestParam(value = "width", defaultValue = "150", required = false) Integer width,
+			@RequestParam(value = "height", defaultValue = "150", required = false) Integer height,
+			HttpServletRequest request, HttpServletResponse response) throws IOException {
+
 		try {
 			if (imageId <= 0 && StringUtils.isNullOrEmpty(filename)) {
 				throw new IllegalArgumentException();
 			}
 			
-			
-		    	log.debug("name {} decoded {}.", filename, ServletUtils.getEncodedFileName(filename));
-		    	Image image = 	imageService.getImage(imageId);		    	
-		    		
-		    	log.debug("checking equals plain : {} , decoded : {} ", 
-		    	org.apache.commons.lang3.StringUtils.equals(filename, image.getName()) , 
-		    	org.apache.commons.lang3.StringUtils.equals(ServletUtils.getEncodedFileName(filename), image.getName()));
-		    		
-		    	if (image != null) {
-		    		if( !isAllowed(image))
-						throw new UnAuthorizedException(); 
-		    		
-						InputStream input;
-						String contentType;
-						int contentLength;
-						if (width > 0 && width > 0 && thumbnail ) {
-							input = imageService.getImageThumbnailInputStream(image, width, height);
-							contentType = image.getThumbnailContentType();
-							contentLength = image.getThumbnailSize();
-						} else {
-							input = imageService.getImageInputStream(image);
-							contentType = image.getContentType();
-							contentLength = image.getSize();  
-						}
-						response.setContentType(contentType);
-						response.setContentLength(contentLength);
-						IOUtils.copy(input, response.getOutputStream());
-						response.flushBuffer();
-			}	
+			log.debug("name {} decoded {}.", filename, ServletUtils.getEncodedFileName(filename));
+			Image image = imageService.getImage(imageId);
+
+			log.debug("checking equals plain : {} , decoded : {} ",
+					org.apache.commons.lang3.StringUtils.equals(filename, image.getName()),
+					org.apache.commons.lang3.StringUtils.equals(ServletUtils.getEncodedFileName(filename),
+							image.getName()));
+
+			if (image != null) {
+				if (!isAllowed(image))
+					throw new UnAuthorizedException();
+
+				InputStream input;
+				String contentType;
+				int contentLength;
+				if (width > 0 && width > 0 && thumbnail) {
+					input = imageService.getImageThumbnailInputStream(image, width, height);
+					contentType = image.getThumbnailContentType();
+					contentLength = image.getThumbnailSize();
+				} else {
+					input = imageService.getImageInputStream(image);
+					contentType = image.getContentType();
+					contentLength = image.getSize();
+				}
+				response.setContentType(contentType);
+				response.setContentLength(contentLength);
+				IOUtils.copy(input, response.getOutputStream());
+				response.flushBuffer();
+			}
+
 		} catch (Exception e) {
 			log.warn(e.getMessage(), e);
 			response.setStatus(301);
-			String url = ServletUtils.getContextPath(request) + configService.getApplicationProperty("components.download.images.no-image-url", "/images/no-image.jpg");
+			String url = ServletUtils.getContextPath(request) + configService
+					.getApplicationProperty("components.download.images.no-image-url", "/images/no-image.jpg");
 			response.addHeader("Location", url);
 		}
 	}
-	
+
 	@RequestMapping(value = "/files/{linkId}", method = RequestMethod.GET)
 	@ResponseBody
-	public void downloadFileByLink(
-			@PathVariable("linkId") String linkId, 
+	public void downloadFileByLink(@PathVariable("linkId") String linkId,
 			@RequestParam(value = "thumbnail", defaultValue = "false", required = false) boolean thumbnail,
 			@RequestParam(value = "width", defaultValue = "150", required = false) Integer width,
 			@RequestParam(value = "height", defaultValue = "150", required = false) Integer height,
-			HttpServletRequest request,
-			HttpServletResponse response) throws IOException {
-		try { 
-			
-			
-			SharedLink link = sharedLinkService.getSharedLink(linkId); 
-			Attachment attachment = attachmentService.getAttachment(link.getObjectId());  
+			HttpServletRequest request, HttpServletResponse response) throws IOException {
+		try {
+
+			SharedLink link = sharedLinkService.getSharedLink(linkId);
+			Attachment attachment = attachmentService.getAttachment(link.getObjectId());
 			// checking security ..
-			if (attachment != null) { 
-				if( !isAllowed(attachment))
-					throw new UnAuthorizedException(); 	 
+			if (attachment != null) {
+				if (!isAllowed(attachment))
+					throw new UnAuthorizedException();
 				InputStream input;
 				String contentType;
 				int contentLength;
 				if (thumbnail) {
-					boolean noThumbnail = false;		    				
-    				if(attachmentService.hasThumbnail(attachment)) {
-	    		    	ThumbnailImage thumbnailImage = new ThumbnailImage();			
-	    		    	thumbnailImage.setWidth(width);
-	    		    	thumbnailImage.setHeight(height);		    		    		
-    				    try {
-							input = attachmentService.getAttachmentThumbnailInputStream( attachment, thumbnailImage );
+					boolean noThumbnail = false;
+					if (attachmentService.hasThumbnail(attachment)) {
+						ThumbnailImage thumbnailImage = new ThumbnailImage();
+						thumbnailImage.setWidth(width);
+						thumbnailImage.setHeight(height);
+						try {
+							input = attachmentService.getAttachmentThumbnailInputStream(attachment, thumbnailImage);
 							response.setContentType(thumbnailImage.getContentType());
-							response.setContentLength( (int) thumbnailImage.getSize() );
+							response.setContentLength((int) thumbnailImage.getSize());
 							IOUtils.copy(input, response.getOutputStream());
 							response.flushBuffer();
 						} catch (Exception e) {
 							log.warn(e.getMessage(), e);
 							noThumbnail = true;
 						}
-	    			}		    				
-    				if(noThumbnail) {
-	    				response.setStatus(301);
-	    				String url = configService.getApplicationProperty("components.download.attachments.no-attachment-url", "/images/no-image.jpg");
-	    				response.addHeader("Location", url);
-	    			}		
+					}
+					if (noThumbnail) {
+						response.setStatus(301);
+						String url = configService.getApplicationProperty(
+								"components.download.attachments.no-attachment-url", "/images/no-image.jpg");
+						response.addHeader("Location", url);
+					}
 				} else {
-					input = attachmentService.getAttachmentInputStream(attachment); 
-					if( viewCountService != null &&  configService.getApplicationBooleanProperty(CommunityConstants.SERVICES_VIEWCOUNT_ENABLED_PROP_NAME, false)) {
+					input = attachmentService.getAttachmentInputStream(attachment);
+					if (viewCountService != null && configService.getApplicationBooleanProperty(
+							CommunityConstants.SERVICES_VIEWCOUNT_ENABLED_PROP_NAME, false)) {
 						log.debug("add view count attachment '{}'", attachment.getAttachmentId());
 						viewCountService.addViewCount(Models.ATTACHMENT.getObjectType(), attachment.getAttachmentId());
 					}
-					
+
 					contentType = attachment.getContentType();
 					contentLength = attachment.getSize();
 					response.setContentType(contentType);
 					response.setContentLength(contentLength);
-					
-					IOUtils.copy(input, response.getOutputStream()); 
-					response.setHeader("contentDisposition", "attachment;filename=" + ServletUtils.getEncodedFileName(attachment.getName()));
-					response.flushBuffer();					
-				} 
+
+					IOUtils.copy(input, response.getOutputStream());
+					response.setHeader("contentDisposition",
+							"attachment;filename=" + ServletUtils.getEncodedFileName(attachment.getName()));
+					response.flushBuffer();
+				}
 			}
-			
+
 		} catch (Exception e) {
 			log.warn(e.getMessage(), e);
 			response.setStatus(301);
-			String url = ServletUtils.getContextPath(request) + configService.getApplicationProperty("components.download.images.no-image-url", "/images/no-image.jpg");
+			String url = ServletUtils.getContextPath(request) + configService
+					.getApplicationProperty("components.download.images.no-image-url", "/images/no-image.jpg");
 			response.addHeader("Location", url);
 		}
-	}	
+	}
 }

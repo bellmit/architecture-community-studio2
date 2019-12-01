@@ -53,7 +53,7 @@ public class SecuredStudioPageController {
 	@Qualifier("communityEventPublisher")
 	private CommunitySpringEventPublisher communitySpringEventPublisher;
 	
-	@Secured({ "ROLE_ADMINISTRATOR", "ROLE_SYSTEM", "ROLE_DEVELOPER"})
+	@Secured({ "ROLE_ADMINISTRATOR", "ROLE_SYSTEM", "ROLE_DEVELOPER", "ROLE_OPERATOR"})
 	@RequestMapping(value={"/", "/index"}, method = { RequestMethod.POST, RequestMethod.GET })
     public String index(
 	    HttpServletRequest request, 
@@ -66,7 +66,7 @@ public class SecuredStudioPageController {
 		return view;
     }
 	
-	@Secured({ "ROLE_ADMINISTRATOR", "ROLE_SYSTEM", "ROLE_DEVELOPER"})
+	@Secured({ "ROLE_ADMINISTRATOR", "ROLE_SYSTEM", "ROLE_DEVELOPER", "ROLE_OPERATOR"})
 	@RequestMapping(value = "/**", method = { RequestMethod.POST, RequestMethod.GET })
     public String page(
 	    HttpServletRequest request, 

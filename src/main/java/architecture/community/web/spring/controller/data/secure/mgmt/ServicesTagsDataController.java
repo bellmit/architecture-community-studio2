@@ -128,6 +128,26 @@ public class ServicesTagsDataController {
 		}
 		return result;
 	}
+
+	@Secured({ "ROLE_ADMINISTRATOR", "ROLE_SYSTEM", "ROLE_DEVELOPER"})
+	@RequestMapping(value = "/tags/0/objects/save-or-update.json", method = { RequestMethod.POST, RequestMethod.GET })
+	@ResponseBody
+	public Result saveOrUpdateTagsObjects(@RequestBody TagsObjects tagsObjects, NativeWebRequest request) throws NotFoundException, UnAuthorizedException {
+		
+		Result result = Result.newResult(); 
+		for( Long objectId : tagsObjects.objectIds) {
+			tagService.removeAllTags(tagsObjects.objectType, objectId);
+		}
+		for( Long tagId : tagsObjects.tagIds) {
+			ContentTag tag = tagService.getTag(tagId);
+			for( Long objectId : tagsObjects.objectIds) {
+				tagService.addTag(tag, tagsObjects.objectType, objectId );
+				result.setCount(result.getCount() + 1);
+			}
+		}
+		return result;
+	}
+	
 	
 	@Secured({ "ROLE_ADMINISTRATOR", "ROLE_SYSTEM", "ROLE_DEVELOPER" })
 	@RequestMapping(value = "/tags/0/objects/delete.json", method = { RequestMethod.POST, RequestMethod.GET })

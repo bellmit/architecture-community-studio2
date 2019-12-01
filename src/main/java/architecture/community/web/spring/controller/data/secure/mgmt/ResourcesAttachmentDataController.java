@@ -35,17 +35,19 @@ import architecture.community.model.Property;
 import architecture.community.query.CustomQueryService;
 import architecture.community.share.SharedLink;
 import architecture.community.share.SharedLinkService;
+import architecture.community.tag.TagService;
 import architecture.community.user.User;
 import architecture.community.util.SecurityHelper;
 import architecture.community.web.model.DataSourceRequest;
 import architecture.community.web.model.ItemList;
 import architecture.community.web.model.Result;
+import architecture.community.web.spring.controller.data.AbstractResourcesDataController;
 import architecture.community.web.spring.controller.data.Utils;
 import architecture.ee.util.StringUtils; 
 
 @Controller("community-mgmt-resources-attachment-secure-data-controller")
 @RequestMapping("/data/secure/mgmt/attachments")
-public class ResourcesAttachmentDataController {
+public class ResourcesAttachmentDataController extends AbstractResourcesDataController {
 
 	
 
@@ -61,6 +63,9 @@ public class ResourcesAttachmentDataController {
 	@Qualifier("sharedLinkService")
 	private SharedLinkService sharedLinkService;
 	
+	@Autowired(required=false)
+	@Qualifier("tagService")
+	private TagService tagService; 	
 	
 	private Logger log = LoggerFactory.getLogger(ResourcesAttachmentDataController.class);
 	
@@ -77,16 +82,7 @@ public class ResourcesAttachmentDataController {
 		
 		User user = SecurityHelper.getUser();
 		Attachment attachment = attachmentService.getAttachment(attachmentId);
-		
-		attachmentService.removeAttachment(attachment); 
-		if( isSetSharedLinkService() )
-		{
-			try {
-				SharedLink link = sharedLinkService.getSharedLink(Models.ATTACHMENT.getObjectType(), attachment.getAttachmentId());
-				sharedLinkService.removeSharedLink(link.getLinkId());
-			} catch (Exception e) { 
-			}
-		}
+		deleteAttachment(attachment);
 		return Result.newResult();
 	}
 	
@@ -135,7 +131,7 @@ public class ResourcesAttachmentDataController {
 	@ResponseBody
 	public Attachment saveOrUpdate(@RequestBody DefaultAttachment attachment, NativeWebRequest request) throws NotFoundException { 
 		
-		DefaultAttachment attachmentToUse = 	(DefaultAttachment)attachmentService.getAttachment(attachment.getAttachmentId());
+		DefaultAttachment attachmentToUse = 	(DefaultAttachment) attachmentService.getAttachment(attachment.getAttachmentId());
 		if( !StringUtils.isNullOrEmpty(attachment.getName()) )
 		{
 			attachmentToUse.setName(attachment.getName());
@@ -163,7 +159,8 @@ public class ResourcesAttachmentDataController {
 		@RequestParam(value = "fields", defaultValue = "none", required = false) String fields,
 		NativeWebRequest request) throws NotFoundException {
 		
-		boolean includeLink = org.apache.commons.lang3.StringUtils.containsOnly(fields, "link");  
+		boolean includeLink = org.apache.commons.lang3.StringUtils.contains(fields, "link");  
+		boolean includeTags = org.apache.commons.lang3.StringUtils.contains(fields, "tags");  
 		
 		Attachment attachment = 	attachmentService.getAttachment(attachmentId);
 		if( includeLink && isSetSharedLinkService()) {
@@ -174,6 +171,12 @@ public class ResourcesAttachmentDataController {
 				
 			}
 		}
+		
+		if( includeTags && tagService!= null ) {
+			String tags = tagService.getTagsAsString(Models.ATTACHMENT.getObjectType(), attachment.getAttachmentId());
+			((DefaultAttachment)attachment).setTags( tags );
+		}
+		
 		return attachment;
 	}
 	
@@ -186,7 +189,8 @@ public class ResourcesAttachmentDataController {
 		NativeWebRequest request) { 
 		
 		
-		boolean includeLink = org.apache.commons.lang3.StringUtils.containsOnly(fields, "link");
+		boolean includeLink = org.apache.commons.lang3.StringUtils.contains(fields, "link");
+		boolean includeTags = org.apache.commons.lang3.StringUtils.contains(fields, "tags");  
 		
 		if( !dataSourceRequest.getData().containsKey("objectType")) {
 			dataSourceRequest.getData().put("objectType", -1);
@@ -204,14 +208,19 @@ public class ResourcesAttachmentDataController {
 		for( Long id : items ) {
 			try {
 				Attachment attachment = attachmentService.getAttachment(id);
-				if( includeLink && isSetSharedLinkService()) {
+				
+				if( includeLink && sharedLinkService != null) {
 					try {
 						SharedLink link = sharedLinkService.getSharedLink(Models.ATTACHMENT.getObjectType(), attachment.getAttachmentId());
 						((DefaultAttachment) attachment ).setSharedLink(link);
-					} catch (Exception ignore) {
-						
-					}
+					} catch (Exception ignore) {}	
 				}
+				
+				if( includeTags && tagService!= null ) {
+					String tags = tagService.getTagsAsString(Models.ATTACHMENT.getObjectType(), attachment.getAttachmentId());
+					((DefaultAttachment)attachment).setTags( tags );
+				}
+				
 				attachments.add(attachment);
 				
 			} catch (NotFoundException e) {
@@ -220,6 +229,18 @@ public class ResourcesAttachmentDataController {
 		return new ItemList(attachments, totalCount );
 	}	
 	
+	@Secured({ "ROLE_ADMINISTRATOR", "ROLE_SYSTEM", "ROLE_DEVELOPER"})
+	@RequestMapping(value = "/{attachmentId:[\\p{Digit}]+}/refresh.json", method = { RequestMethod.POST, RequestMethod.GET })
+	@ResponseBody
+	public Result refreshAttachment (
+		@PathVariable Long attachmentId,
+		NativeWebRequest request) throws NotFoundException {
+		
+		Attachment attachment = attachmentService.getAttachment(attachmentId);
+		attachmentService.refresh(attachment);
+		
+		return Result.newResult();
+	}
 	
 	@Secured({ "ROLE_ADMINISTRATOR", "ROLE_SYSTEM", "ROLE_DEVELOPER"})
 	@RequestMapping(value = "/{attachmentId:[\\p{Digit}]+}/link.json", method = { RequestMethod.POST, RequestMethod.GET })
@@ -231,7 +252,9 @@ public class ResourcesAttachmentDataController {
 		
 		Attachment attachment = attachmentService.getAttachment(attachmentId);
 		
-		return sharedLinkService.getSharedLink(Models.ATTACHMENT.getObjectType(), attachment.getAttachmentId(), createIfNotExist);
+		SharedLink link = sharedLinkService.getSharedLink(Models.ATTACHMENT.getObjectType(), attachment.getAttachmentId(), createIfNotExist);
+ 
+		return link; 
 	
 	}	
 	
@@ -242,11 +265,11 @@ public class ResourcesAttachmentDataController {
 	public Result removeLink (
 		@PathVariable Long attachmentId,
 		@RequestBody DataSourceRequest dataSourceRequest, 
-		NativeWebRequest request) throws NotFoundException {
-		
+		NativeWebRequest request) throws NotFoundException { 
 		Attachment attachment = 	attachmentService.getAttachment(attachmentId);
 		SharedLink link = sharedLinkService.getSharedLink(Models.ATTACHMENT.getObjectType(), attachment.getAttachmentId());
 		sharedLinkService.removeSharedLink(link.getLinkId());
+		attachmentService.refresh(attachment);
 		
 		return Result.newResult();
 	}	

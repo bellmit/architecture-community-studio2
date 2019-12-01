@@ -29,52 +29,30 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.context.request.NativeWebRequest;
 import org.springframework.web.context.support.ServletContextResourceLoader;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-
 import architecture.community.exception.NotFoundException;
-import architecture.community.model.json.JsonDateDeserializer;
-import architecture.community.model.json.JsonDateSerializer;
 import architecture.community.util.CommunityConstants;
 import architecture.community.util.DateUtils;
 import architecture.community.web.model.Result;
+import architecture.community.web.spring.controller.data.AbstractResourcesDataController;
+import architecture.community.web.spring.controller.data.AbstractResourcesDataController.FileInfo;
 import architecture.community.web.util.ServletUtils;
 import architecture.ee.service.ConfigService;
 import architecture.ee.service.Repository;
 
 @Controller("community-mgmt-resources-secure-data-controller")
 @RequestMapping("/data/secure/mgmt")
-public class ResourcesDataController {
+public class ResourcesDataController extends AbstractResourcesDataController {
 	
-	private Logger log = LoggerFactory.getLogger(getClass());
+	private Logger log = LoggerFactory.getLogger(getClass()); 
 
-	private static final String[] FILE_EXTENSIONS = new String [] {".ftl", ".jsp", ".xml", ".html", ".groovy"} ;
-	
-	@Autowired
-	@Qualifier("configService")
-	private ConfigService configService;
-
-	@Autowired
-	private ServletContext servletContext;
 	
 	@Autowired
 	@Qualifier("repository")
 	private Repository repository;
 
-	@Autowired
-	private ResourceLoader loader ;
-	
 	public ResourcesDataController() {
 		
 	}  
-	
-	protected ResourceLoader getResourceLoader () {
-		if( loader == null )
-			loader = new ServletContextResourceLoader(servletContext);
-		return loader;
-	}
-	
 	
 	private ResourceType getResourceType(String name ) {
 		return ResourceType.valueOf(name.toUpperCase());
@@ -223,206 +201,18 @@ public class ResourcesDataController {
     		NativeWebRequest request) throws NotFoundException, IOException {  
 		
 		ResourceType resourceType = getResourceType(type);
-		File target =  getResourceByType(resourceType, file.path ).getFile();
+		File target =  getResourceByType(resourceType, file.getPath() ).getFile();
 		// backup to filename + .yyyymmddhhmmss .
 		if( backup ) {
 			File backupFile = new File(target.getParentFile() , target.getName() + "." + DateUtils.toString(new Date()) );  
 			FileUtils.copyFile(target, backupFile); 
 		}
-		FileUtils.writeStringToFile(target, file.fileContent, ServletUtils.DEFAULT_HTML_ENCODING , false);  
+		FileUtils.writeStringToFile(target, file.getFileContent(), ServletUtils.DEFAULT_HTML_ENCODING , false);  
 		FileInfo fileInfo = new FileInfo(target); 
 		fileInfo.setFileContent(target.isDirectory() ? "" : FileUtils.readFileToString(target, "UTF-8"));  
 		return fileInfo;
     } 	 
-	
-	
-	
-	
-    protected String getResourcePathByType(ResourceType type) { 
-		String path = null;
-		if( ResourceType.TEMPLATE ==  type ) {
-			StringBuilder sb = new StringBuilder().append(File.separatorChar).append("WEB-INF").append(File.separatorChar).append("template").append(File.separatorChar).append("ftl");
-			path = configService.getApplicationProperty(CommunityConstants.VIEW_RENDER_FREEMARKER_TEMPLATE_LOCATION_PROP_NAME, sb.toString());
-		}else if (ResourceType.SQL ==  type) {
-			StringBuilder sb = new StringBuilder().append(File.separatorChar).append("WEB-INF").append(File.separatorChar).append("sql");
-			path = configService.getApplicationProperty(CommunityConstants.RESOURCES_SQL_LOCATION_PROP_NAME, sb.toString());
-		}else if (ResourceType.SCRIPT ==  type) {
-			StringBuilder sb = new StringBuilder().append(File.separatorChar).append("WEB-INF").append(File.separatorChar).append("groovy-script");
-			path = configService.getApplicationProperty(CommunityConstants.RESOURCES_GROOVY_LOCATION_PROP_NAME, sb.toString());
-		}else if (ResourceType.JSP ==  type) {
-			StringBuilder sb = new StringBuilder().append(File.separatorChar).append("WEB-INF").append(File.separatorChar).append("jsp");
-			path = configService.getApplicationProperty(CommunityConstants.VIEW_RENDER_JSP_LOCATION_PROP_NAME, sb.toString());
-		}else if (ResourceType.DECORATOR ==  type) {	
-			StringBuilder sb = new StringBuilder().append(File.separatorChar).append("decorators");
-			path = configService.getApplicationProperty(CommunityConstants.RESOURCES_DECORATOR_LOCATION_PROP_NAME, sb.toString());
-		} 
-		return path;
-    }
-    
-	protected Resource getResourceByType(ResourceType type, String filename ) {
-		String path = getResourcePathByType(type);  
-		StringBuilder sb = new StringBuilder(path);
-		if(StringUtils.isNotEmpty(filename)) {
-			String filenameToUse = StringUtils.removeStart(filename, "/");
-			filenameToUse = StringUtils.removeStart(filename, "\\");
-			sb.append(File.separatorChar).append(filenameToUse); 
-		}
-		return loader.getResource(sb.toString()); 
-	} 
- 
-	private boolean isValid(String type) {  
-		if( ResourceType.valueOf(type.toUpperCase()) != null )
-			return true;
-		return false;
-	}  
+	 
 
-	public static class FileInfo { 
-		private boolean directory;
-		private String path;
-		private String relativePath;
-		private String absolutePath;
-		private String name;
-		private long size;
-		private Date lastModifiedDate;
-		private String fileContent; 
-		
-		public FileInfo() {
-			this.directory = false;
-		}
-		
-		public FileInfo(File file) {
-			this.lastModifiedDate = new Date(file.lastModified());
-			this.name = file.getName();
-			this.path = file.getPath();
-			this.absolutePath = file.getAbsolutePath();
-			this.directory = file.isDirectory();
-			if (this.directory) {
-				this.size = FileUtils.sizeOfDirectory(file);
-			} else {
-				this.size = FileUtils.sizeOf(file);
-			}
-		}
-
-		public FileInfo(File root, File file) {
-			this.lastModifiedDate = new Date(file.lastModified());
-			this.name = file.getName();
-			this.path = StringUtils.removeStart(file.getAbsolutePath(), root.getAbsolutePath());
-			this.absolutePath = file.getAbsolutePath();
-			this.directory = file.isDirectory();  
-			if (this.directory) {
-				this.size = FileUtils.sizeOfDirectory(file);
-			} else {
-				this.size = FileUtils.sizeOf(file);
-			}
-		}
-
-		/**
-		 * @return fileContent
-		 */
-		public String getFileContent() {
-			return fileContent;
-		}
-
-		/**
-		 * @param fileContent
-		 *            설정할 fileContent
-		 */
-		public void setFileContent(String fileContent) {
-			this.fileContent = fileContent;
-		}
-
-		/**
-		 * @return directory
-		 */
-		public boolean isDirectory() {
-			return directory;
-		}
-
-		/**
-		 * @param directory
-		 *            설정할 directory
-		 */
-		public void setDirectory(boolean directory) {
-			this.directory = directory;
-		}
-
-		/**
-		 * @return path
-		 */
-		public String getPath() {
-			return path;
-		}
-
-		/**
-		 * @param path
-		 *            설정할 path
-		 */
-		public void setPath(String path) {
-			this.path = path;
-		}
-
-		/**
-		 * @return absolutePath
-		 */
-		@JsonIgnore
-		public String getAbsolutePath() {
-			return absolutePath;
-		}
-
-		/**
-		 * @param absolutePath
-		 *            설정할 absolutePath
-		 */
-		public void setAbsolutePath(String absolutePath) {
-			this.absolutePath = absolutePath;
-		}
-
-		/**
-		 * @return name
-		 */
-		public String getName() {
-			return name;
-		}
-
-		/**
-		 * @param name
-		 *            설정할 name
-		 */
-		public void setName(String name) {
-			this.name = name;
-		}
-
-		/**
-		 * @return size
-		 */
-		public long getSize() {
-			return size;
-		}
-
-		/**
-		 * @param size
-		 *            설정할 size
-		 */
-		public void setSize(long size) {
-			this.size = size;
-		}
-
-		/**
-		 * @return lastModifiedDate
-		 */
-		@JsonSerialize(using = JsonDateSerializer.class)
-		public Date getLastModifiedDate() {
-			return lastModifiedDate;
-		} 
-		
-		/**
-		 * @param lastModifiedDate
-		 *            설정할 lastModifiedDate
-		 */
-		@JsonDeserialize(using = JsonDateDeserializer.class)
-		public void setLastModifiedDate(Date lastModifiedDate) {
-			this.lastModifiedDate = lastModifiedDate;
-		} 
-	}
 
 }

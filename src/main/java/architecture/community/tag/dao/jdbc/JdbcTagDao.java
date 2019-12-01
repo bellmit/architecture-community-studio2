@@ -125,8 +125,7 @@ public class JdbcTagDao extends ExtendedJdbcDaoSupport implements TagDao {
 	}
 
 	public void deleteContentTag(long tagId) {
-		getExtendedJdbcTemplate().update(getBoundSql("COMMUNITY_WEB.DELETE_CONTENT_TAG").getSql(),
-				new SqlParameterValue(Types.NUMERIC, tagId));
+		getExtendedJdbcTemplate().update(getBoundSql("COMMUNITY_WEB.DELETE_CONTENT_TAG").getSql(), new SqlParameterValue(Types.NUMERIC, tagId));
 	}
 	
 	public long getNextTagId(){		

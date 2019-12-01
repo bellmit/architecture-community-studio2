@@ -47,7 +47,7 @@ public class SecurePageController {
 	}
 	
 	
-	@Secured({ "ROLE_ADMINISTRATOR"})
+	@Secured({ "ROLE_ADMINISTRATOR", "ROLE_SYSTEM", "ROLE_DEVELOPER", "ROLE_OPERATOR"})
 	@RequestMapping(value = "/ftl/**", method = { RequestMethod.POST, RequestMethod.GET })
     public String page(
 	    HttpServletRequest request, 
@@ -68,7 +68,7 @@ public class SecurePageController {
 	
 	
 	
-	@Secured({ "ROLE_SYSTEM" , "ROLE_ADMINISTRATOR"})
+	@Secured({ "ROLE_ADMINISTRATOR", "ROLE_SYSTEM", "ROLE_DEVELOPER", "ROLE_OPERATOR"})
 	@RequestMapping(value = "/{filename:.+}", method = { RequestMethod.POST, RequestMethod.GET })
     public String page(@PathVariable String filename, 
     		@RequestParam(value = "t", required = false) String template, 

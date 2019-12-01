@@ -43,7 +43,7 @@ import architecture.community.web.model.ItemList;
 import architecture.community.web.model.Result;
 
 @Controller("community-resources-data-controller")
-public class ResourcesDataController {
+public class ResourcesDataController extends AbstractResourcesDataController {
 
 	
 	@Inject
@@ -113,14 +113,8 @@ public class ResourcesDataController {
 	@ResponseBody
 	public Attachment getAttachment (
 		@PathVariable Long attachmentId,  
-		NativeWebRequest request) throws NotFoundException { 
-		
-		Attachment attachment = 	attachmentService.getAttachment(attachmentId);
-		try {
-			SharedLink link = sharedLinkService.getSharedLink(Models.ATTACHMENT.getObjectType(), attachment.getAttachmentId());
-			((DefaultAttachment) attachment ).setSharedLink(link);
-		} catch (Exception ignore) {}
-		return attachment;
+		NativeWebRequest request) throws NotFoundException {  
+		return getAttachmentById(attachmentId);
 	}
 	
     
@@ -135,12 +129,7 @@ public class ResourcesDataController {
 		User me = SecurityHelper.getUser(); 
 		Attachment attachment = 	attachmentService.getAttachment(attachmentId);
 		if( isAllowed( attachment.getUser(),  me) ) {
-			attachmentService.removeAttachment(attachment);
-			try {
-				SharedLink link = sharedLinkService.getSharedLink(Models.ATTACHMENT.getObjectType(), attachment.getAttachmentId());
-				sharedLinkService.removeSharedLink(link.getLinkId());
-			} catch (Exception e) { 
-			}
+			deleteAttachment(attachment);
 		}else {
 			throw new UnAuthorizedException();
 		} 

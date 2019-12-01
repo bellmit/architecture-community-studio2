@@ -25,6 +25,8 @@ import architecture.community.image.ThumbnailImage;
 
 public interface AttachmentService {
 	
+	public abstract void refresh(Attachment attachment);
+	
 	public abstract Attachment getAttachment(long attachmentId) throws NotFoundException ;
 	
 	public abstract int getAttachmentCount(int objectType, long objectId);

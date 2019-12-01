@@ -190,7 +190,7 @@ public class ResourcesImagesDataController {
 		}
  
 		public void setObjectType(int objectType) {
-		    this.objectType = objectType;
+			this.objectType = objectType;
 		}
 	
 		/**
@@ -260,8 +260,7 @@ public class ResourcesImagesDataController {
 		}finally {
 			IOUtils.closeQuietly(inputStream);
 		}
-	}
-     
+	} 
 	
 	/**
 	 * 이미지를 생성 / 업데이트 한다. 
@@ -449,7 +448,7 @@ public class ResourcesImagesDataController {
 	@RequestMapping(value = "/images/{imageId:[\\p{Digit}]+}/get.json", method = { RequestMethod.POST, RequestMethod.GET })
 	@ResponseBody
 	public Image getImage (
-		@PathVariable Long imageId, 
+		@PathVariable Long imageId,
 		@RequestParam(value = "fields", defaultValue = "none", required = false) String fields,
 		NativeWebRequest request) throws NotFoundException {
 		
@@ -469,6 +468,7 @@ public class ResourcesImagesDataController {
 			String tags = tagService.getTagsAsString(Models.IMAGE.getObjectType(), image.getImageId());
 			((DefaultImage)image).setTags( tags );
 		}
+		
 		
 		return image;
 	}

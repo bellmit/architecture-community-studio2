@@ -28,6 +28,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
 
 import javax.imageio.ImageIO;
@@ -36,13 +37,21 @@ import javax.inject.Inject;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.filefilter.FileFilterUtils;
+import org.apache.commons.io.filefilter.IOFileFilter;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.rendering.ImageType;
 import org.apache.pdfbox.rendering.PDFRenderer;
+import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
+import org.apache.poi.openxml4j.opc.OPCPackage;
 import org.apache.poi.xslf.usermodel.XMLSlideShow;
 import org.apache.poi.xslf.usermodel.XSLFSlide;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.farng.mp3.MP3File;
+import org.farng.mp3.filename.FilenameTag;
+import org.farng.mp3.id3.AbstractID3v2;
+import org.farng.mp3.id3.FrameBodyAPIC;
+import org.farng.mp3.id3.ID3v2_3Frame;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -87,9 +96,7 @@ public class CommunityAttachmentService extends AbstractAttachmentService implem
 	
 	public CommunityAttachmentService() {
 	}
-
 	
-
 	protected synchronized File getAttachmentDir() {
 		if(attachmentDir == null)
         {
@@ -266,6 +273,42 @@ public class CommunityAttachmentService extends AbstractAttachmentService implem
 		}
 	}
 	
+	public void refresh (Attachment attachment) {  
+		
+		File dir = getAttachmentCacheDir();
+		StringBuilder sb = new StringBuilder();
+		sb.append( attachment.getAttachmentId() ).append(".bin");	
+		String cached = sb.toString();
+		
+		sb = new StringBuilder();
+		sb.append( attachment.getAttachmentId() ).append("_");
+		String prefix = sb.toString();
+		
+		Collection<File> list = FileUtils.listFiles(dir, new IOFileFilter() { 
+			
+			@Override
+			public boolean accept(File file) {
+				log.debug("check dir : {} , file : {} ", dir.getAbsolutePath(), file.getName()); 
+				boolean accept = false;
+				if( StringUtils.equals(file.getName(), cached ) )
+					accept = true; 
+				if( StringUtils.startsWithIgnoreCase(file.getName(), prefix))
+					accept = true;
+				return accept;
+			}
+
+			@Override
+			public boolean accept(File dir, String name) { 
+				log.debug("check dir : {} , file : {} ", dir.getAbsolutePath(), name); 
+				return false;
+			}}, null);
+		
+		for(File file : list )
+			FileUtils.deleteQuietly(file);
+		
+		attachmentCache.remove(attachment.getAttachmentId());	
+	}
+	
 	protected File getAttachmentFromCacheIfExist(Attachment attachment) throws IOException{		
 		File dir = getAttachmentCacheDir();
 		
@@ -305,7 +348,8 @@ public class CommunityAttachmentService extends AbstractAttachmentService implem
 	public boolean hasThumbnail(Attachment attachment){
 		if (StringUtils.endsWithIgnoreCase(attachment.getContentType(), "pdf") || 
 			StringUtils.endsWithIgnoreCase(attachment.getContentType(), "presentation") || 
-			StringUtils.startsWithIgnoreCase(attachment.getContentType(), "image") ) 
+			StringUtils.startsWithIgnoreCase(attachment.getContentType(), "image") ||
+			StringUtils.endsWithIgnoreCase(attachment.getContentType(), "mp3") )
 			return true;
 		return false;
 	}
@@ -319,34 +363,47 @@ public class CommunityAttachmentService extends AbstractAttachmentService implem
 		}
 	}
 
-	protected File getThumbnailFromCacheIfExist(Attachment attach, ThumbnailImage thumbnail ) throws IOException {
+	protected File getThumbnailFromCacheIfExist(Attachment attachment, ThumbnailImage thumbnail ) throws IOException, InvalidFormatException {
 		
-		log.debug("thumbnail generation {} x {} ... ", thumbnail.getWidth(), thumbnail.getHeight());
+		log.debug("thumbnail extracting for {} x {} ... ", thumbnail.getWidth(), thumbnail.getHeight());
+		
 		File dir = getAttachmentCacheDir();
-		File file = new File(dir, toThumbnailFilename(attach, thumbnail.getWidth(), thumbnail.getHeight()));
-		File originalFile = getAttachmentFromCacheIfExist(attach);
-		log.debug("source: " + originalFile.getAbsoluteFile() + ", " + originalFile.length());
-		log.debug("thumbnail:" + file.getAbsoluteFile());
+		File attachmentFile = getAttachmentFromCacheIfExist(attachment);
+		File thumbnailFile = new File(dir, toThumbnailFilename(attachment, thumbnail.getWidth(), thumbnail.getHeight()));
 		
-		if (file.exists() && file.length() > 0) {
-			thumbnail.setSize(file.length());
-			return file;
-		}
+		log.debug("attachment : {} ({}).", attachmentFile.getAbsoluteFile() , attachmentFile.length());
+		log.debug("thumbnail : {}", thumbnailFile.getAbsoluteFile()); 
 		
-		lock.lock();
+		if (thumbnailFile.exists() && thumbnailFile.length() > 0) {
+			log.debug("thumbnail cache exist ({})", thumbnailFile.length() );
+			thumbnail.setSize(thumbnailFile.length());
+			return thumbnailFile;
+		} 
+		lock.lock(); 
 		try {
-			// PDF 
-			if (StringUtils.endsWithIgnoreCase(attach.getContentType(), "pdf")) {
-				PDDocument document = PDDocument.load(originalFile);			
+			
+				// PDF 
+			log.debug("prepare for {}.", attachment.getContentType());
+			if (StringUtils.endsWithIgnoreCase(attachment.getContentType(), "pdf")) {
+				log.debug("extracting thumbnail from pdf");
+				PDDocument document = PDDocument.load(attachmentFile);			
 				PDFRenderer pdfRenderer = new PDFRenderer(document);	
 				BufferedImage image = pdfRenderer.renderImageWithDPI(0, 300, ImageType.RGB);
-				ImageIO.write(Thumbnails.of(image).size(thumbnail.getWidth(), thumbnail.getHeight()).asBufferedImage(), "png", file);
-				thumbnail.setSize(file.length());
-				return file;
-			// EXCEL
-			} else if (StringUtils.endsWithIgnoreCase(attach.getContentType(), "presentation")) {
-				log.debug("extracting image from pptx");
-				XMLSlideShow ppt = new XMLSlideShow(new FileInputStream(originalFile));
+				ImageIO.write(Thumbnails.of(image).size(thumbnail.getWidth(), thumbnail.getHeight()).asBufferedImage(), "png", thumbnailFile);
+				thumbnail.setSize(thumbnailFile.length());
+				return thumbnailFile;
+			/*} else if (StringUtils.endsWithIgnoreCase(attachment.getContentType(), "presentation")) { 
+				// EXCEL..
+				OPCPackage pkg = OPCPackage.open(attachmentFile);
+				XSSFWorkbook workbook = new XSSFWorkbook(pkg);
+				XSSFSheet sheet = workbook.getSheetAt(0);
+				SheetRender sr;
+				
+			*/	
+			} else if (StringUtils.endsWithIgnoreCase(attachment.getContentType(), "presentation")) { 
+				// PPT
+				log.debug("extracting thumbnail from pptx");
+				XMLSlideShow ppt = new XMLSlideShow(new FileInputStream(attachmentFile));
 				Dimension pgsize = ppt.getPageSize();
 				log.debug("slide width x height : {}" , pgsize.toString());
 				 //render
@@ -359,21 +416,48 @@ public class CommunityAttachmentService extends AbstractAttachmentService implem
 				graphics.setPaint(Color.white);
 				graphics.fill(new Rectangle2D.Float(0, 0, pgsize.width, pgsize.height )); 
 				slide.get(0).draw(graphics);  
-				ImageIO.write(Thumbnails.of(img).size(thumbnail.getWidth(), thumbnail.getHeight()).asBufferedImage(), "png", file);
-				//ImageIO.write(img, "png", file);
+				ImageIO.write(Thumbnails.of(img).size(thumbnail.getWidth(), thumbnail.getHeight()).asBufferedImage(), "png", thumbnailFile); 
 				log.debug("done." );
-			
+			} else if (StringUtils.endsWithIgnoreCase(attachment.getContentType(), "mp3")) {
+			// MP3
+				log.debug("extracting thumbnail from mp3");
+				try {
+					MP3File mp3file = new MP3File(attachmentFile);
+					FilenameTag fileNameTag = mp3file.getFilenameTag();
+					AbstractID3v2 id3v2 = mp3file.getID3v2Tag(); 
+					log.debug("fileNameTag: '{}'", fileNameTag);
+					Iterator iter = id3v2.getFrameIterator();
+					while(iter.hasNext())
+					{
+						ID3v2_3Frame frame =  (ID3v2_3Frame)iter.next(); 
+						log.debug("Frame: '{}' {}", frame.getIdentifier(), frame.getClass().getName());
+						if( frame.getBody() instanceof FrameBodyAPIC ) { 
+							FrameBodyAPIC apicBody = (FrameBodyAPIC) frame.getBody();
+							Object bytes = apicBody.getObject("Picture Data");
+							log.debug("Found APIC Frame.");
+							log.debug( "encoding : {}, mine type : {}, image : {}" , apicBody.getObject("Text Encoding"), apicBody.getObject("MIME Type"), bytes );
+							if( bytes!= null)
+								FileUtils.writeByteArrayToFile(thumbnailFile, (byte[]) bytes);
+							break;
+						}else {
+							continue;
+						}
+					} 
+				} catch (Exception e) {
+					log.error(e.getMessage(), e);
+				}
+				
 			// IMAGE	
-			} else if (StringUtils.startsWithIgnoreCase(attach.getContentType(), "image")) {
-				BufferedImage originalImage = ImageIO.read(originalFile);
+			} else if (StringUtils.startsWithIgnoreCase(attachment.getContentType(), "image")) {
+				BufferedImage originalImage = ImageIO.read(attachmentFile);
 				if (originalImage.getHeight() < thumbnail.getHeight() || originalImage.getWidth() < thumbnail.getWidth()) {
 					thumbnail.setSize(0);
-					return originalFile;
+					return attachmentFile;
 				}
 				BufferedImage image = Thumbnails.of(originalImage).size(thumbnail.getWidth(), thumbnail.getHeight()).asBufferedImage();
-				ImageIO.write(image, "png", file);
-				thumbnail.setSize(file.length());
-				return file;
+				ImageIO.write(image, "png", thumbnailFile);
+				thumbnail.setSize(thumbnailFile.length());
+				return thumbnailFile;
 			}
 			
 		}finally {
@@ -381,7 +465,26 @@ public class CommunityAttachmentService extends AbstractAttachmentService implem
 		}		
 		return null;
 	}
-	 
+
+
+	/**
+	 * Return the file extension from the mime type (e.g. image/jpg will return
+	 * jpg)
+	 * 
+	 * @param mimeType
+	 * @return
+	 */
+	private String getFileExtensionFromMimeType(String mimeType) {
+		String name = "unknown";
+		if (mimeType != null) {
+			int idx = mimeType.lastIndexOf('/');
+			if (idx > 0)
+				name = mimeType.substring(idx + 1, mimeType.length());
+		}
+		return name;
+	}
+
+	
     protected String toThumbnailFilename(Attachment image, int width, int height) {
     		StringBuilder sb = new StringBuilder();
     		sb.append(image.getAttachmentId()).append("_").append(width).append("_").append(height).append(".bin");

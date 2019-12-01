@@ -48,11 +48,9 @@ public class AnnouncesDataController {
 	private Logger log = LoggerFactory.getLogger(ResourcesDataController.class);
 
 	@PreAuthorize("permitAll")
-	@RequestMapping(value = "/data/announces/{announceId:[\\p{Digit}]+}/get.json", method = { RequestMethod.POST,
-			RequestMethod.GET })
+	@RequestMapping(value = "/data/announces/{announceId:[\\p{Digit}]+}/get.json", method = { RequestMethod.POST, RequestMethod.GET })
 	@ResponseBody
-	public Announce getAnnounce(@PathVariable Long announceId, NativeWebRequest request)
-			throws AnnounceNotFoundException {
+	public Announce getAnnounce(@PathVariable Long announceId, NativeWebRequest request) throws AnnounceNotFoundException {
 
 		User user = SecurityHelper.getUser();
 		Announce announce = announceService.getAnnounce(announceId);
@@ -62,8 +60,7 @@ public class AnnouncesDataController {
 	@PreAuthorize("permitAll")
 	@RequestMapping(value = "/data/announces/list.json", method = { RequestMethod.POST, RequestMethod.GET })
 	@ResponseBody
-	public ItemList getAnnounces(
-
+	public ItemList getAnnounces( 
 			@RequestParam(value = "objectType", defaultValue = "0", required = false) Integer objectType,
 			@RequestParam(value = "objectId", defaultValue = "0", required = false) Long objectId,
 			@RequestBody DataSourceRequest dataSourceRequest, NativeWebRequest request) throws NotFoundException {

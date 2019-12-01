@@ -59,6 +59,8 @@ public class DefaultAttachment extends PropertyModelObjectAwareSupport implement
 	
 	private SharedLink sharedLink ;
 	
+	private String tags;
+	
 	public DefaultAttachment() {
 		super(UNKNOWN_OBJECT_TYPE, UNKNOWN_OBJECT_ID);
 		this.name = null;
@@ -68,6 +70,7 @@ public class DefaultAttachment extends PropertyModelObjectAwareSupport implement
 		this.creationDate = Calendar.getInstance().getTime();
 		this.modifiedDate = this.creationDate;
 		this.sharedLink = null;
+		this.tags = null;
 	}
 	
 	public User getUser() {
@@ -172,6 +175,13 @@ public class DefaultAttachment extends PropertyModelObjectAwareSupport implement
 		this.sharedLink = sharedLink;
 	}
 
+	public String getTags() {
+		return tags;
+	}
+
+	public void setTags(String tags) {
+		this.tags = tags;
+	}
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append("Attachement{");

@@ -249,22 +249,25 @@ public class DefaultTagService implements TagService {
 		 * }
 		 */
 	}
-
-	@Override
+ 
 	public void removeAllTags(int objectType, long objectId) throws UnAuthorizedException {
 		if (objectType < 0 || objectId < 0L)
 			throw new IllegalStateException();
+		
 		synchronized (getLock(objectType, objectId)) {
 			List<ContentTag> contentTags = new ImmutableList.Builder<ContentTag>().addAll(getTags(objectType, objectId)).build();
 			for (ContentTag tag : contentTags) {
 				List<Long> tags = getTagIds(objectType, objectId);
 				int index = tags.indexOf(Long.valueOf(tag.getTagId()));
-				if (index >= 0)
+				if (index >= 0) {
 					tags.remove(index);
-				else
+					tagDao.removeTag(tag.getTagId(), objectType, objectId);
+				}else {
 					throw new IllegalArgumentException("Tag is not associated with this object");
+				}
 			}
-			tagContentCache.remove(getCacheKey(objectType, objectId));
+			
+			tagContentCache.remove(getCacheKey(objectType, objectId));			
 		}
 	}
 	
