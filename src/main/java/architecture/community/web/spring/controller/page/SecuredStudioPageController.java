@@ -16,12 +16,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.servlet.HandlerMapping;
 
+import architecture.community.audit.event.AuditLogEvent;
 import architecture.community.exception.NotFoundException;
 import architecture.community.model.Models;
 import architecture.community.page.DefaultPage;
-import architecture.community.security.spring.userdetails.SystemUser;
 import architecture.community.services.CommunitySpringEventPublisher;
-import architecture.community.services.audit.event.AuditLogEvent;
+import architecture.community.user.User;
 import architecture.community.util.SecurityHelper;
 import architecture.community.web.util.ServletUtils;
 import architecture.ee.service.ConfigService;
@@ -29,9 +29,7 @@ import architecture.ee.service.ConfigService;
 /**
  * 
  * Studio Page Controller ..
- * Only Access allowed to "ROLE_ADMINISTRATOR" , "ROLE_SYSTEM",  "ROLE_DEVELOPER"
- * 
- * 
+ * Only Access allowed to "ROLE_ADMINISTRATOR" , "ROLE_SYSTEM",  "ROLE_DEVELOPER" , "ROLE_OPERATOR"
  * 
  * @author donghyuck
  *
@@ -59,12 +57,14 @@ public class SecuredStudioPageController {
 	    HttpServletRequest request, 
 	    HttpServletResponse response, 
 	    Model model) throws NotFoundException, IOException {	
+		
 		String view = "/studio/index";
 		ServletUtils.setContentType(ServletUtils.DEFAULT_HTML_CONTENT_TYPE, response);	 
 		setPage( request, response, model, view );
 		 
 		return view;
-    }
+	}
+	
 	
 	@Secured({ "ROLE_ADMINISTRATOR", "ROLE_SYSTEM", "ROLE_DEVELOPER", "ROLE_OPERATOR"})
 	@RequestMapping(value = "/**", method = { RequestMethod.POST, RequestMethod.GET })
@@ -76,22 +76,23 @@ public class SecuredStudioPageController {
 		String restOfTheUrl = (String) request.getAttribute(HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE);		
 		String lcStr = restOfTheUrl.substring(8).toLowerCase(); 
 		log.debug("view {} > {} .", restOfTheUrl, lcStr );
-		setPage( request, response, model, lcStr );
-		
-		
+		setPage( request, response, model, lcStr ); 
 		return lcStr;
-    } 
+	}
 	
-	private void setPage (HttpServletRequest request, HttpServletResponse response, Model model, String template) { 
+	
+	private void setPage (HttpServletRequest request, HttpServletResponse response, Model model, String template) {   
 		DefaultPage page = new DefaultPage();
-		SystemUser user = new SystemUser();
+		User user = SecurityHelper.getUser();
 		page.setUser(user);
 		page.setTemplate(template);
-		model.addAttribute("__page", page);  
-		
-		if(communitySpringEventPublisher!=null)
-			communitySpringEventPublisher.fireEvent((new AuditLogEvent.Builder(request, response, SecurityHelper.getAuthentication())).object(Models.PAGE.getObjectType(), -1L).action(AuditLogEvent.READ_ACTION).label(template).build());
-		
-		
+		model.addAttribute("__page", page);   
+		if(communitySpringEventPublisher!=null) {
+			communitySpringEventPublisher.fireEvent((new AuditLogEvent.Builder(request, response, this))
+						.objectTypeAndObjectId(Models.PAGE.getObjectType(), page.getPageId())
+						.action(AuditLogEvent.READ)
+						.code(this.getClass().getName())
+						.resource(template).build()); 	
+		}
 	}
 }

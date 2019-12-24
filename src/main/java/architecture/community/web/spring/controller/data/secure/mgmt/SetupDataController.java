@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.context.request.NativeWebRequest;
 
 import architecture.community.model.Property;
+import architecture.community.services.CommunityAdminService;
 import architecture.community.services.setup.CommunitySetupService;
 import architecture.community.web.model.Result;
 import architecture.ee.component.editor.DataSourceConfigReader;
@@ -36,7 +37,9 @@ public class SetupDataController {
 	@Qualifier("configService")
 	private ConfigService configService;
 	
-
+	@Autowired
+	@Qualifier("adminService")
+	CommunityAdminService adminService;
 	
 	@Inject
 	@Qualifier("setupService")
@@ -50,6 +53,16 @@ public class SetupDataController {
 		return new DataSourceConfigReader(repository.getSetupApplicationProperties());
 	}
 	
+	@Secured({ "ROLE_ADMINISTRATOR", "ROLE_SYSTEM", "ROLE_DEVELOPER"})
+	@RequestMapping(value = "/setup/menu/reload.json", method = { RequestMethod.POST, RequestMethod.GET })
+	@ResponseBody
+	public Result reloadSetupMenu( NativeWebRequest request){  
+		Result result = Result.newResult(); 
+		log.debug("SETUP Menu Reloading...");
+		adminService.reloadMenu();
+		log.debug("Menu Reloaded.");
+		return result;
+	}
 	
 	@Secured({ "ROLE_ADMINISTRATOR", "ROLE_SYSTEM", "ROLE_DEVELOPER"})
 	@RequestMapping(value = "/setup/datasource/deploy.json", method = { RequestMethod.POST, RequestMethod.GET })

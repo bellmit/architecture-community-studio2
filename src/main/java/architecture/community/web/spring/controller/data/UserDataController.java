@@ -99,10 +99,11 @@ public class UserDataController {
 		    HttpServletResponse response) { 
 		try {
 			
-			if( !hasAvatarImage( username ))
-			{
-				throw new NotFoundException();
-			} 
+			if(hasAvatarImage( username ))
+			{	
+				ResourceUtils.noAvatars(request, response);
+			}
+			
 			AvatarImage image = userAvatarService.getAvatareImageByUsername(username);  
 			if (image != null) {
 				InputStream input;
@@ -121,7 +122,7 @@ public class UserDataController {
 				response.setContentLength(contentLength);
 				IOUtils.copy(input, response.getOutputStream());
 				response.flushBuffer();
-			} 
+			}
 		} catch (Exception e) {
 			log.warn(e.getMessage(), e);
 			response.setStatus(301);

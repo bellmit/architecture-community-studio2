@@ -20,6 +20,7 @@ import org.springframework.web.servlet.View;
 
 import architecture.community.attachment.Attachment;
 import architecture.community.attachment.AttachmentService;
+import architecture.community.audit.event.AuditLogEvent;
 import architecture.community.exception.NotFoundException;
 import architecture.community.model.Models;
 import architecture.community.page.Page;
@@ -27,7 +28,6 @@ import architecture.community.page.PageNotFoundException;
 import architecture.community.page.PageService;
 import architecture.community.services.CommunityGroovyService;
 import architecture.community.services.CommunitySpringEventPublisher;
-import architecture.community.services.audit.event.AuditLogEvent;
 import architecture.community.share.SharedLink;
 import architecture.community.share.SharedLinkService;
 import architecture.community.util.SecurityHelper;
@@ -111,17 +111,23 @@ public class PdfViewerController implements ServletContextAware {
 					view = StringUtils.removeEnd(view, ".jsp");
 				}
 			}
-			
-			if(communitySpringEventPublisher!=null){
-				communitySpringEventPublisher.fireEvent((new AuditLogEvent.Builder(request, response, SecurityHelper.getAuthentication())).object(Models.PAGE.getObjectType(), page.getPageId()).action(AuditLogEvent.READ_ACTION).label(page.getName()).build());
-			}
+			if(communitySpringEventPublisher!=null)
+				communitySpringEventPublisher.fireEvent((new AuditLogEvent.Builder(request, response, this))
+					.objectTypeAndObjectId(Models.ATTACHMENT.getObjectType(), attachment.getAttachmentId() )
+					.action(AuditLogEvent.READ)
+					.code(this.getClass().getName())
+					.resource(page.getName()).build()); 
 				
 			if( viewCountService != null ) {
 				viewCountService.addViewCount(Models.ATTACHMENT.getObjectType(), attachment.getAttachmentId()); 
 			}
 		} catch (PageNotFoundException e) {
 			ServletUtils.setContentType(ServletUtils.DEFAULT_HTML_CONTENT_TYPE, response);
-			communitySpringEventPublisher.fireEvent((new AuditLogEvent.Builder(request, response, SecurityHelper.getAuthentication())).object(Models.PAGE.getObjectType(), -1L).action(AuditLogEvent.READ_ACTION).label( DEFAULT_PDF_VIEWER_PAGE ).build());
+			if(communitySpringEventPublisher!=null)
+				communitySpringEventPublisher.fireEvent((new AuditLogEvent.Builder(request, response, SecurityHelper.getAuthentication()))
+					.objectTypeAndObjectId(Models.PAGE.getObjectType(), -1L)
+					.action(AuditLogEvent.READ)
+					.resource(DEFAULT_PDF_VIEWER_PAGE).build());
 		} 
 		
 		return view;

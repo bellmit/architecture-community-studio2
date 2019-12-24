@@ -122,6 +122,11 @@ public class CommunityAdminService implements ApplicationContextAware , Manageme
 		return null;
 	}
 	
+	public void reloadMenu() {
+		if( isSetMenuService() )
+			menuService.reload();
+	}
+	
 	// CREATING -- may be setup 
 	
 	public void addUserProvider ( UserProvider userProvider ) {  
@@ -147,8 +152,7 @@ public class CommunityAdminService implements ApplicationContextAware , Manageme
 			throw new ComponentNotFoundException(CommunityLogLocalizer.format("012004", dataSource, DataSource.class.getName() ), e);
 		} 
 	}  
-	
-	
+	 
 	public CustomQueryService createCustomQueryService(String dataSource) {  
 		try {
 			

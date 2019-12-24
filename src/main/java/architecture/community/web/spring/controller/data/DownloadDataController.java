@@ -135,8 +135,7 @@ public class DownloadDataController {
 			// checking security ..
 			if (image != null) {
 				if (!isAllowed(image))
-					throw new UnAuthorizedException();
-
+					throw new UnAuthorizedException(); 
 				InputStream input;
 				String contentType;
 				int contentLength;
@@ -148,25 +147,21 @@ public class DownloadDataController {
 					input = imageService.getImageInputStream(image);
 					contentType = image.getContentType();
 					contentLength = image.getSize();
-				}
-
+				} 
 				response.setContentType(contentType);
 				response.setContentLength(contentLength);
 				IOUtils.copy(input, response.getOutputStream());
 				response.flushBuffer();
-			}
-
+			} 
 		} catch (Exception e) {
 			log.warn(e.getMessage(), e);
 			response.setStatus(301);
-			String url = ServletUtils.getContextPath(request) + configService
-					.getApplicationProperty("components.download.images.no-image-url", "/images/no-image.jpg");
+			String url = ServletUtils.getContextPath(request) + configService.getApplicationProperty("components.download.images.no-image-url", "/images/no-image.jpg");
 			response.addHeader("Location", url);
 		}
 	}
 
-	@RequestMapping(value = "/images/{imageId:[\\p{Digit}]+}/{filename:.+}", method = { RequestMethod.GET,
-			RequestMethod.POST })
+	@RequestMapping(value = "/images/{imageId:[\\p{Digit}]+}/{filename:.+}", method = { RequestMethod.GET, RequestMethod.POST })
 	@ResponseBody
 	public void downloadImage(@PathVariable("imageId") Long imageId, @PathVariable("filename") String filename,
 			@RequestParam(value = "thumbnail", defaultValue = "false", required = false) boolean thumbnail,
@@ -212,8 +207,7 @@ public class DownloadDataController {
 		} catch (Exception e) {
 			log.warn(e.getMessage(), e);
 			response.setStatus(301);
-			String url = ServletUtils.getContextPath(request) + configService
-					.getApplicationProperty("components.download.images.no-image-url", "/images/no-image.jpg");
+			String url = ServletUtils.getContextPath(request) + configService.getApplicationProperty("components.download.images.no-image-url", "/images/no-image.jpg");
 			response.addHeader("Location", url);
 		}
 	}
@@ -255,8 +249,7 @@ public class DownloadDataController {
 					}
 					if (noThumbnail) {
 						response.setStatus(301);
-						String url = configService.getApplicationProperty(
-								"components.download.attachments.no-attachment-url", "/images/no-image.jpg");
+						String url = configService.getApplicationProperty( "components.download.attachments.no-attachment-url", "/images/no-image.jpg");
 						response.addHeader("Location", url);
 					}
 				} else {
@@ -271,10 +264,9 @@ public class DownloadDataController {
 					contentLength = attachment.getSize();
 					response.setContentType(contentType);
 					response.setContentLength(contentLength);
-
+					
 					IOUtils.copy(input, response.getOutputStream());
-					response.setHeader("contentDisposition",
-							"attachment;filename=" + ServletUtils.getEncodedFileName(attachment.getName()));
+					response.setHeader("contentDisposition", "attachment;filename=" + ServletUtils.getEncodedFileName(attachment.getName()));
 					response.flushBuffer();
 				}
 			}
@@ -282,8 +274,7 @@ public class DownloadDataController {
 		} catch (Exception e) {
 			log.warn(e.getMessage(), e);
 			response.setStatus(301);
-			String url = ServletUtils.getContextPath(request) + configService
-					.getApplicationProperty("components.download.images.no-image-url", "/images/no-image.jpg");
+			String url = ServletUtils.getContextPath(request) + configService.getApplicationProperty("components.download.images.no-image-url", "/images/no-image.jpg");
 			response.addHeader("Location", url);
 		}
 	}

@@ -20,10 +20,8 @@ public class LibraryObject {
 	/**
 	 * Last modified timestamp.
 	 */
-	private Date lastModified;
-
-	
-	//@JsonSerialize(using = CustomJsonDateSerializer.class)
+	private Date lastModified; 
+	 
 	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSZ")
 	public Date getLastModified() {
 		return lastModified;

@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import javax.inject.Inject;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.io.IOUtils;
@@ -24,6 +25,7 @@ import architecture.community.attachment.AttachmentService;
 import architecture.community.exception.NotFoundException;
 import architecture.community.image.ThumbnailImage;
 import architecture.community.query.CustomQueryService;
+import architecture.community.web.spring.controller.data.ResourceUtils;
 import architecture.community.web.spring.controller.data.secure.mgmt.ResourcesAttachmentDataController;
 import architecture.community.web.util.ServletUtils;
 import architecture.ee.service.ConfigService;
@@ -57,58 +59,62 @@ public class SecureDownloadDataController {
 		    @RequestParam(value = "thumbnail", defaultValue = "false", required = false) boolean thumbnail,
 		    @RequestParam(value = "width", defaultValue = "150", required = false) Integer width,
 		    @RequestParam(value = "height", defaultValue = "150", required = false) Integer height,
+		    HttpServletRequest request,
 		    HttpServletResponse response) throws IOException { 
 		try {
-		    if (fileId > 0 && !StringUtils.isNullOrEmpty(filename)) {
-		    	
-		    		log.debug("name {} decoded {}.", filename, ServletUtils.getEncodedFileName(filename)); 
-		    		Attachment attachment = 	attachmentService.getAttachment(fileId); 
-		    		int objectType = attachment.getObjectType() ;
-		    		long objectId = attachment.getObjectId(); 
-		    		log.debug("checking equals plain : {} , decoded : {} ", 
-		    				org.apache.commons.lang3.StringUtils.equals(filename, attachment.getName()) , 
-		    				org.apache.commons.lang3.StringUtils.equals(ServletUtils.getEncodedFileName(filename), attachment.getName()));
-		    		
-		    		if (org.apache.commons.lang3.StringUtils.equals(filename, attachment.getName())) {
-		    			if ( thumbnail ) {		    	
+			
+		    if (fileId > 0 && !StringUtils.isNullOrEmpty(filename)) { 
+		    	log.debug("name {} decoded {}.", filename, ServletUtils.getEncodedFileName(filename)); 
+		    	Attachment attachment = 	attachmentService.getAttachment(fileId); 
+		    	int objectType = attachment.getObjectType() ;
+		    	long objectId = attachment.getObjectId(); 
+		    	log.debug("checking equals plain : {} , decoded : {} ", 
+		    			org.apache.commons.lang3.StringUtils.equals(filename, attachment.getName()) , 
+		    			org.apache.commons.lang3.StringUtils.equals(ServletUtils.getEncodedFileName(filename), attachment.getName())); 
+		    	if (org.apache.commons.lang3.StringUtils.equals(filename, attachment.getName())) {
+		    		if ( thumbnail ) {		    	
 		    				boolean noThumbnail = false;		    				
 		    				if(attachmentService.hasThumbnail(attachment)) {
-			    		    		ThumbnailImage thumbnailImage = new ThumbnailImage();			
-			    		    		thumbnailImage.setWidth(width);
-			    		    		thumbnailImage.setHeight(height);		    		    		
+		    					ThumbnailImage thumbnailImage = new ThumbnailImage();			
+			    		    	thumbnailImage.setWidth(width);
+			    		    	thumbnailImage.setHeight(height);		    		    		
 		    				    try {
 									InputStream input = attachmentService.getAttachmentThumbnailInputStream( attachment, thumbnailImage );
-									response.setContentType(thumbnailImage.getContentType());
-									response.setContentLength( (int) thumbnailImage.getSize() );
-									IOUtils.copy(input, response.getOutputStream());
-									response.flushBuffer();
-								} catch (Exception e) {
-									log.warn(e.getMessage(), e);
+									if(input != null) {
+										response.setContentType(thumbnailImage.getContentType());
+										response.setContentLength( (int) thumbnailImage.getSize() );
+										IOUtils.copy(input, response.getOutputStream());
+										response.flushBuffer(); 
+									}else {
+										noThumbnail = true;
+									}
+								} catch (Throwable e) {
+									// mlog.warn(e.getMessage(), e);
 									noThumbnail = true;
 								}
-			    			}		    				
-		    				if(noThumbnail) {
-			    				response.setStatus(301);
-			    				String url = configService.getApplicationProperty("components.download.attachments.no-attachment-url", "/images/no-image.jpg");
-			    				response.addHeader("Location", url);
-			    			}		    				
-		    			} else {
-							InputStream input = attachmentService.getAttachmentInputStream(attachment);
-							response.setContentType(attachment.getContentType());
-							response.setContentLength(attachment.getSize());
-							IOUtils.copy(input, response.getOutputStream());
-							response.setHeader("contentDisposition", "attachment;filename=" + ServletUtils.getEncodedFileName(attachment.getName()));
-							response.flushBuffer();
-		    			}
-			} else {
-			    throw new NotFoundException();
-			}
+			    			}
+		    			if(noThumbnail) {
+		    				ResourceUtils.noThumbnails(request, response);
+		    				//response.setStatus(301);
+			    			//String url = configService.getApplicationProperty("components.download.attachments.no-attachment-url", "/images/no-image.jpg");
+			    			//response.addHeader("Location", url);
+		    			}		    				
+		    		}else {
+						InputStream input = attachmentService.getAttachmentInputStream(attachment);
+						response.setContentType(attachment.getContentType());
+						response.setContentLength(attachment.getSize());
+						IOUtils.copy(input, response.getOutputStream());
+						response.setHeader("contentDisposition", "attachment;filename=" + ServletUtils.getEncodedFileName(attachment.getName()));
+						response.flushBuffer();
+		    		}
+				} else {
+					throw new NotFoundException();
+				}
 		    } else {
-		    		throw new NotFoundException();
-		    }
+				throw new NotFoundException();
+			}
 		} catch (NotFoundException e) {
-		    response.sendError(404);
+			response.sendError(404);
 		}
 	}
-	
 }

@@ -24,6 +24,7 @@ import org.springframework.web.util.UrlPathHelper;
 
 import com.google.common.base.Stopwatch;
 
+import architecture.community.audit.event.AuditLogEvent;
 import architecture.community.exception.NotFoundException;
 import architecture.community.exception.UnAuthorizedException;
 import architecture.community.model.Models;
@@ -35,7 +36,6 @@ import architecture.community.security.spring.acls.CommunityAclService;
 import architecture.community.security.spring.acls.PermissionsBundle;
 import architecture.community.services.CommunityGroovyService;
 import architecture.community.services.CommunitySpringEventPublisher;
-import architecture.community.services.audit.event.AuditLogEvent;
 import architecture.community.util.SecurityHelper;
 import architecture.community.viewcount.ViewCountService;
 import architecture.community.web.model.Result;
@@ -119,8 +119,11 @@ public class RESTfulAPIController {
 		model.addAttribute("__page", api );
 		
 		if(communitySpringEventPublisher!=null)
-			communitySpringEventPublisher.fireEvent((new AuditLogEvent.Builder(request, response, SecurityHelper.getAuthentication())).object(Models.API.getObjectType(), api.getApiId()).action(AuditLogEvent.READ_ACTION).label(api.getName()).build());
-		
+			communitySpringEventPublisher.fireEvent((new AuditLogEvent.Builder(request, response, this))
+					.objectTypeAndObjectId(Models.API.getObjectType(), api.getApiId())
+					.action(AuditLogEvent.READ)
+					.code(this.getClass().getName())
+					.resource(api.getName()).build()); 
 		
 		if(StringUtils.isNotEmpty(api.getScriptSource())) { 
 			Stopwatch stopwatch = Stopwatch.createStarted(); 
@@ -200,8 +203,13 @@ public class RESTfulAPIController {
 	 				model.addAttribute("__variables", variables);  
 	 				
 	 				if(communitySpringEventPublisher!=null)
-	 					communitySpringEventPublisher.fireEvent((new AuditLogEvent.Builder(request, response, SecurityHelper.getAuthentication())).object(Models.API.getObjectType(), page.getApiId()).action(AuditLogEvent.READ_ACTION).label(page.getName()).build());
+	 					communitySpringEventPublisher.fireEvent((new AuditLogEvent.Builder(request, response, this))
+	 							.objectTypeAndObjectId(Models.API.getObjectType(), page.getApiId())
+	 							.action(AuditLogEvent.READ)
+	 							.code(this.getClass().getName())
+	 							.resource(page.getName()).build()); 
 	 				
+
 	 				if(StringUtils.isNotEmpty(page.getScriptSource())) {
 	 					DataView _view = communityGroovyService.getService(page.getScriptSource(), DataView.class);
 	 					try {

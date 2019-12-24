@@ -18,10 +18,10 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.HandlerMapping;
 
+import architecture.community.audit.event.AuditLogEvent;
 import architecture.community.exception.NotFoundException;
 import architecture.community.model.Models;
 import architecture.community.services.CommunitySpringEventPublisher;
-import architecture.community.services.audit.event.AuditLogEvent;
 import architecture.community.user.User;
 import architecture.community.util.SecurityHelper;
 import architecture.community.web.util.ServletUtils;
@@ -60,8 +60,11 @@ public class SecurePageController {
 		log.debug("view {} > {} .", restOfTheUrl, lcStr );
 		
 		if(communitySpringEventPublisher!=null)
-			communitySpringEventPublisher.fireEvent((new AuditLogEvent.Builder(request, response, SecurityHelper.getAuthentication())).object(Models.PAGE.getObjectType(), -1L).action(AuditLogEvent.READ_ACTION).label(lcStr).build());
-		
+			communitySpringEventPublisher.fireEvent((new AuditLogEvent.Builder(request, response, this))
+						.objectTypeAndObjectId(Models.PAGE.getObjectType(), -1)
+						.action(AuditLogEvent.READ)
+						.code(this.getClass().getName())
+						.resource(lcStr).build()); 
 		
 		return lcStr;
     }
@@ -90,7 +93,11 @@ public class SecurePageController {
 		}
 		
 		if(communitySpringEventPublisher!=null)
-			communitySpringEventPublisher.fireEvent((new AuditLogEvent.Builder(request, response, SecurityHelper.getAuthentication())).object(Models.PAGE.getObjectType(), -1L).action(AuditLogEvent.READ_ACTION).label(view).build());
+			communitySpringEventPublisher.fireEvent((new AuditLogEvent.Builder(request, response, this))
+					.objectTypeAndObjectId(Models.PAGE.getObjectType(), -1)
+					.action(AuditLogEvent.READ)
+					.code(this.getClass().getName())
+					.resource(view).build()); 
 		
 		return view;
     }

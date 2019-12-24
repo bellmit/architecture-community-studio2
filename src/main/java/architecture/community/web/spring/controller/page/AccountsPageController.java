@@ -15,12 +15,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import architecture.community.audit.event.AuditLogEvent;
 import architecture.community.model.Models;
 import architecture.community.page.Page;
 import architecture.community.page.PageNotFoundException;
 import architecture.community.page.PageService;
 import architecture.community.services.CommunitySpringEventPublisher;
-import architecture.community.services.audit.event.AuditLogEvent;
 import architecture.community.util.SecurityHelper;
 import architecture.community.web.util.ServletUtils;
 import architecture.ee.service.ConfigService;
@@ -105,12 +105,19 @@ public class AccountsPageController {
 				view = StringUtils.removeEnd(view, ".ftl");					
 			}
 			if(communitySpringEventPublisher!=null)
-				communitySpringEventPublisher.fireEvent((new AuditLogEvent.Builder(request, response, SecurityHelper.getAuthentication())).object(Models.PAGE.getObjectType(), page.getPageId()).action(AuditLogEvent.READ_ACTION).label(page.getName()).build());
+				communitySpringEventPublisher.fireEvent((new AuditLogEvent.Builder(request, response, this))
+					.objectTypeAndObjectId(Models.PAGE.getObjectType(), page.getPageId())
+					.action(AuditLogEvent.READ)
+					.code(this.getClass().getName())
+					.resource(page.getName()).build()); 
 			
 		} catch (PageNotFoundException e) {
 			if(communitySpringEventPublisher!=null)
-				communitySpringEventPublisher.fireEvent((new AuditLogEvent.Builder(request, response, SecurityHelper.getAuthentication())).object(Models.PAGE.getObjectType(), -1L).action(AuditLogEvent.READ_ACTION).label(view).build());
-			
+				communitySpringEventPublisher.fireEvent((new AuditLogEvent.Builder(request, response, SecurityHelper.getAuthentication()))
+					.objectTypeAndObjectId(Models.PAGE.getObjectType(), -1L)
+					.action(AuditLogEvent.READ)
+					.code(this.getClass().getName())
+					.resource(filename).build());
 		}
 		logger.debug("VIEW: {}.", view );
 		return view;

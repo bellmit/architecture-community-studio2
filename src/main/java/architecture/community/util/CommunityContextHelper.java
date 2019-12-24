@@ -38,7 +38,7 @@ public final class CommunityContextHelper implements ApplicationContextAware {
 			return false;
 		return true;
 	}
-	public static Repository getRepository(){
+	public static Repository getRepository(){ 
 		return getComponent(Repository.class);
 	}
 	

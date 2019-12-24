@@ -9,7 +9,6 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import architecture.community.image.Image;
 import architecture.community.model.Property;
 
 public class Utils {
@@ -41,4 +40,5 @@ public class Utils {
 		}
 		return list;
 	}
+
 }

@@ -12,7 +12,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.security.acls.domain.ObjectIdentityImpl;
-import org.springframework.security.acls.model.AccessControlEntry;
 import org.springframework.security.acls.model.ObjectIdentity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -37,6 +36,7 @@ import architecture.community.user.User;
 import architecture.community.util.SecurityHelper;
 import architecture.community.web.model.ItemList;
 import architecture.community.web.model.Result;
+import architecture.community.web.spring.controller.data.Utils;
 import architecture.ee.service.ConfigService;
 
 @Controller("community-mgmt-page-secure-data-controller")
@@ -220,7 +220,7 @@ public class PageDataController {
 		
 		Page page = pageService.getPage(pageId, versionId);
 		Map<String, String> properties = page.getProperties(); 
-		return toList(properties);
+		return Utils.toList(properties);
 	}
 
 	@Secured({ "ROLE_ADMINISTRATOR", "ROLE_SYSTEM", "ROLE_DEVELOPER"})
@@ -245,7 +245,7 @@ public class PageDataController {
 			pageService.saveOrUpdatePage(page);
 		}
 		
-		return toList(properties);
+		return Utils.toList(properties);
 	}
 
 	@Secured({ "ROLE_ADMINISTRATOR", "ROLE_SYSTEM", "ROLE_DEVELOPER"})
@@ -266,16 +266,7 @@ public class PageDataController {
 			pageService.saveOrUpdatePage(page);
 		}
 		
-		return toList(properties);
+		return Utils.toList(properties);
 	}
-
-	
-	protected List<Property> toList(Map<String, String> properties) {
-		List<Property> list = new ArrayList<Property>();
-		for (String key : properties.keySet()) {
-			String value = properties.get(key);
-			list.add(new Property(key, value));
-		}
-		return list;
-	}	
+ 
 }

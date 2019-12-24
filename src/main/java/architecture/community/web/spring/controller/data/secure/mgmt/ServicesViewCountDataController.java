@@ -22,6 +22,7 @@ import architecture.community.viewcount.ViewCountService;
 import architecture.community.web.model.DataSourceRequest;
 import architecture.community.web.model.ItemList;
 import architecture.community.web.model.Result;
+import architecture.community.web.spring.controller.data.model.ServicesConfig;
 import architecture.ee.service.ConfigService;
 import architecture.ee.service.Repository;
 
@@ -67,7 +68,7 @@ public class ServicesViewCountDataController {
 	public ServicesConfig getConfig (NativeWebRequest request) throws NotFoundException { 
 		boolean enabled = configService.getApplicationBooleanProperty(CommunityConstants.SERVICES_VIEWCOUNT_ENABLED_PROP_NAME, false);
 		ServicesConfig config = new ServicesConfig();
-		config.enabled = enabled;
+		config.setEnabled(enabled);
 		return config;
 	}
 	
@@ -78,8 +79,8 @@ public class ServicesViewCountDataController {
 			@RequestBody  ServicesConfig config, 
 			NativeWebRequest request) throws NotFoundException { 
 
-		log.debug("viewcounts : {}", config.enabled);
-		configService.setApplicationProperty( CommunityConstants.SERVICES_VIEWCOUNT_ENABLED_PROP_NAME, Boolean.toString(config.enabled));
+		log.debug("viewcounts : {}", config.isEnabled());
+		configService.setApplicationProperty( CommunityConstants.SERVICES_VIEWCOUNT_ENABLED_PROP_NAME, Boolean.toString(config.isEnabled()));
 		
 		return config;
 	}	
@@ -103,15 +104,5 @@ public class ServicesViewCountDataController {
 	}	
 		
 	
-	public static class ServicesConfig implements java.io.Serializable { 
-		
-		boolean enabled ;
 
-		public boolean isEnabled() {
-			return enabled;
-		} 
-		public void setEnabled(boolean enabled) {
-			this.enabled = enabled;
-		} 
-	}
 }

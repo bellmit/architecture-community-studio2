@@ -42,16 +42,17 @@ import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.rendering.ImageType;
 import org.apache.pdfbox.rendering.PDFRenderer;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
-import org.apache.poi.openxml4j.opc.OPCPackage;
 import org.apache.poi.xslf.usermodel.XMLSlideShow;
 import org.apache.poi.xslf.usermodel.XSLFSlide;
-import org.apache.poi.xssf.usermodel.XSSFSheet;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.farng.mp3.MP3File;
 import org.farng.mp3.filename.FilenameTag;
 import org.farng.mp3.id3.AbstractID3v2;
 import org.farng.mp3.id3.FrameBodyAPIC;
 import org.farng.mp3.id3.ID3v2_3Frame;
+import org.jcodec.api.FrameGrab;
+import org.jcodec.api.JCodecException;
+import org.jcodec.common.model.Picture;
+import org.jcodec.scale.AWTUtil;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -344,26 +345,28 @@ public class CommunityAttachmentService extends AbstractAttachmentService implem
 		return attachmentCacheDir;
 	}
 	
-
+	private static final String IMAGE_PNG_FORMAT = "png";
+	
 	public boolean hasThumbnail(Attachment attachment){
 		if (StringUtils.endsWithIgnoreCase(attachment.getContentType(), "pdf") || 
 			StringUtils.endsWithIgnoreCase(attachment.getContentType(), "presentation") || 
+			StringUtils.startsWithIgnoreCase(attachment.getContentType(), "video") ||
 			StringUtils.startsWithIgnoreCase(attachment.getContentType(), "image") ||
 			StringUtils.endsWithIgnoreCase(attachment.getContentType(), "mp3") )
-			return true;
+			return true; 
 		return false;
 	}
 	
 	public InputStream getAttachmentThumbnailInputStream(Attachment image, ThumbnailImage thumbnail) {
 		try {
-		    File file = getThumbnailFromCacheIfExist(image, thumbnail);
-		    return FileUtils.openInputStream(file);
-		} catch (IOException e) {
+			File file = getThumbnailFromCacheIfExist(image, thumbnail);
+			return FileUtils.openInputStream(file);
+		} catch (Exception e) {
 			throw new RuntimeError(e);
 		}
 	}
 
-	protected File getThumbnailFromCacheIfExist(Attachment attachment, ThumbnailImage thumbnail ) throws IOException, InvalidFormatException {
+	protected File getThumbnailFromCacheIfExist(Attachment attachment, ThumbnailImage thumbnail ) throws IOException, InvalidFormatException, JCodecException {
 		
 		log.debug("thumbnail extracting for {} x {} ... ", thumbnail.getWidth(), thumbnail.getHeight());
 		
@@ -382,24 +385,23 @@ public class CommunityAttachmentService extends AbstractAttachmentService implem
 		lock.lock(); 
 		try {
 			
-				// PDF 
 			log.debug("prepare for {}.", attachment.getContentType());
 			if (StringUtils.endsWithIgnoreCase(attachment.getContentType(), "pdf")) {
+				// PDF 
 				log.debug("extracting thumbnail from pdf");
 				PDDocument document = PDDocument.load(attachmentFile);			
 				PDFRenderer pdfRenderer = new PDFRenderer(document);	
 				BufferedImage image = pdfRenderer.renderImageWithDPI(0, 300, ImageType.RGB);
-				ImageIO.write(Thumbnails.of(image).size(thumbnail.getWidth(), thumbnail.getHeight()).asBufferedImage(), "png", thumbnailFile);
+				ImageIO.write(Thumbnails.of(image).size(thumbnail.getWidth(), thumbnail.getHeight()).asBufferedImage(), IMAGE_PNG_FORMAT, thumbnailFile);
 				thumbnail.setSize(thumbnailFile.length());
 				return thumbnailFile;
-			/*} else if (StringUtils.endsWithIgnoreCase(attachment.getContentType(), "presentation")) { 
-				// EXCEL..
-				OPCPackage pkg = OPCPackage.open(attachmentFile);
-				XSSFWorkbook workbook = new XSSFWorkbook(pkg);
-				XSSFSheet sheet = workbook.getSheetAt(0);
-				SheetRender sr;
-				
-			*/	
+			} else if (attachment.getContentType().startsWith("video")) { 
+				log.debug("extracting thumbnail from video");
+				Picture picture = FrameGrab.getFrameFromFile(attachmentFile, 0);  
+				//for JDK (jcodec-javase)
+				BufferedImage bufferedImage = AWTUtil.toBufferedImage(picture);
+				ImageIO.write(bufferedImage, IMAGE_PNG_FORMAT, thumbnailFile );  
+				return thumbnailFile;
 			} else if (StringUtils.endsWithIgnoreCase(attachment.getContentType(), "presentation")) { 
 				// PPT
 				log.debug("extracting thumbnail from pptx");
@@ -407,8 +409,7 @@ public class CommunityAttachmentService extends AbstractAttachmentService implem
 				Dimension pgsize = ppt.getPageSize();
 				log.debug("slide width x height : {}" , pgsize.toString());
 				 //render
-				java.util.List<XSLFSlide> slide = ppt.getSlides();
-				
+				java.util.List<XSLFSlide> slide = ppt.getSlides(); 
 				log.debug("slide pages : {}" , slide.size() );
 				BufferedImage img = new BufferedImage( pgsize.width, pgsize.height, BufferedImage.TYPE_INT_RGB);
 				Graphics2D graphics = img.createGraphics();			
@@ -419,7 +420,7 @@ public class CommunityAttachmentService extends AbstractAttachmentService implem
 				ImageIO.write(Thumbnails.of(img).size(thumbnail.getWidth(), thumbnail.getHeight()).asBufferedImage(), "png", thumbnailFile); 
 				log.debug("done." );
 			} else if (StringUtils.endsWithIgnoreCase(attachment.getContentType(), "mp3")) {
-			// MP3
+				// MP3
 				log.debug("extracting thumbnail from mp3");
 				try {
 					MP3File mp3file = new MP3File(attachmentFile);
@@ -445,10 +446,9 @@ public class CommunityAttachmentService extends AbstractAttachmentService implem
 					} 
 				} catch (Exception e) {
 					log.error(e.getMessage(), e);
-				}
-				
-			// IMAGE	
+				}  
 			} else if (StringUtils.startsWithIgnoreCase(attachment.getContentType(), "image")) {
+				// IMAGE	
 				BufferedImage originalImage = ImageIO.read(attachmentFile);
 				if (originalImage.getHeight() < thumbnail.getHeight() || originalImage.getWidth() < thumbnail.getWidth()) {
 					thumbnail.setSize(0);
@@ -458,8 +458,7 @@ public class CommunityAttachmentService extends AbstractAttachmentService implem
 				ImageIO.write(image, "png", thumbnailFile);
 				thumbnail.setSize(thumbnailFile.length());
 				return thumbnailFile;
-			}
-			
+			} 
 		}finally {
 			lock.unlock();
 		}		

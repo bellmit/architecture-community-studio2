@@ -16,13 +16,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.servlet.View;
 
+import architecture.community.audit.event.AuditLogEvent;
 import architecture.community.model.Models;
 import architecture.community.page.Page;
 import architecture.community.page.PageNotFoundException;
 import architecture.community.page.PageService;
 import architecture.community.services.CommunityGroovyService;
 import architecture.community.services.CommunitySpringEventPublisher;
-import architecture.community.services.audit.event.AuditLogEvent;
 import architecture.community.util.SecurityHelper;
 import architecture.community.viewcount.ViewCountService;
 import architecture.community.web.util.ServletUtils;
@@ -102,15 +102,21 @@ public class WelcomePageController {
 				viewCountService.addViewCount(page);	
 			
 			if(communitySpringEventPublisher!=null)
-				communitySpringEventPublisher.fireEvent((new AuditLogEvent.Builder(request, response, SecurityHelper.getAuthentication())).object(Models.PAGE.getObjectType(), page.getPageId()).action(AuditLogEvent.READ_ACTION).label(page.getName()).build());
+				communitySpringEventPublisher.fireEvent((new AuditLogEvent.Builder(request, response, this))
+					.objectTypeAndObjectId(Models.PAGE.getObjectType(), page.getPageId())
+					.action(AuditLogEvent.READ)
+					.code(this.getClass().getName())
+					.resource(page.getName()).build());
 			
 		} catch (PageNotFoundException e) {
 			ServletUtils.setContentType(ServletUtils.DEFAULT_HTML_CONTENT_TYPE, response);
-			communitySpringEventPublisher.fireEvent((new AuditLogEvent.Builder(request, response, SecurityHelper.getAuthentication())).object(Models.PAGE.getObjectType(), -1L).action(AuditLogEvent.READ_ACTION).label("index.html").build());
-		}  
-		
+			communitySpringEventPublisher.fireEvent((new AuditLogEvent.Builder(request, response, SecurityHelper.getAuthentication()))
+					.objectTypeAndObjectId(Models.PAGE.getObjectType(), -1L)
+					.action(AuditLogEvent.READ)
+					.code(this.getClass().getName())
+					.resource("index.html").build());
+		}
 		isSetupRequired(request, response);
-		
 		return view;
     }
 	
@@ -118,9 +124,9 @@ public class WelcomePageController {
 		//if( configService.isSetupComplete() 
 		InetAddress.getLoopbackAddress();
 		log.debug("LocalAddr {}, RemoteAddr{}, RemoteHost:{}", 
-				request.getLocalAddr(), 
-				request.getRemoteAddr(), 
-				request.getRemoteHost()
+			request.getLocalAddr(), 
+			request.getRemoteAddr(), 
+			request.getRemoteHost()
 		);
 		return true;
 	}
