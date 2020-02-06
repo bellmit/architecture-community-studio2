@@ -11,10 +11,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.util.AntPathMatcher;
+import org.springframework.util.Assert;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -98,54 +102,38 @@ public class DisplayController implements ServletContextAware {
 		
 		log.debug("loading page : {} ({})", filename, version );
 		Page page = pageService.getPage(filename, version);	
-		model.addAttribute("__page", page); 
-		
+		model.addAttribute("__page", page);  
 		
 		if( page.getPageId() > 0 ) {
 			if( page.isSecured() ) {
 				PermissionsBundle bundle = aclService.getPermissionBundle(SecurityHelper.getAuthentication(), Models.PAGE.getObjectClass(), page.getPageId());
 				if( !bundle.isRead() )
 					throw new UnAuthorizedException();
-			}
-			
+			} 
 			if( viewCountService != null && !preview  )
 				viewCountService.addViewCount(page);	
-		}
-		
-		log.debug("page script view : {}", page.getScript() );
+		} 
 		
 		if(StringUtils.isNotEmpty(page.getScript())) {
+			log.debug("page script view : {}", page.getScript() );
 			try {
 				View _view = communityGroovyService.getService(page.getScript(), View.class);
 				_view.render((Map) model, request, response); 
 			} catch (Exception e) { 
 				log.error("Error in render.", e);
 			}
-		} 
-
-		String view = page.getTemplate();
-		if( StringUtils.isEmpty(view)) {
-			view = "/page.ftl";	
-		}
+		}   
 		
 		if( StringUtils.isNotEmpty( page.getBodyText()) && page.getBodyContent().getBodyType() == BodyType.FREEMARKER ) {
 			try {
+				log.debug("page body process as {}.", page.getBodyContent().getBodyType() );
 				PageMaker.Builder builder = PageMaker.newBuilder().configuration(freeMarkerConfig.getConfiguration()).servletContext(servletContext).page(page).model(model).request(request);			
-				builder.buildPageBody(); 
+				builder.buildPageBody();				
 			} catch (Exception e) {
 				log.error("Error in parsing template.", e);
 			}
-		}
-		
-		
-		if(StringUtils.endsWith(view, ".ftl")) {
-			ServletUtils.setContentType(ServletUtils.DEFAULT_HTML_CONTENT_TYPE, response);
-			view = StringUtils.removeEnd(view, ".ftl");	
-		}else if (StringUtils.endsWith(view, ".jsp")) {
-			view = StringUtils.removeEnd(view, ".jsp");	
 		} 
 		
-		log.debug("final view is '{}'", view );
 		if(communitySpringEventPublisher!=null)
 			communitySpringEventPublisher.fireEvent((new AuditLogEvent.Builder(request, response, this))
 					.objectTypeAndObjectId(Models.PAGE.getObjectType(), page.getPageId())
@@ -153,12 +141,26 @@ public class DisplayController implements ServletContextAware {
 					.code(this.getClass().getName())
 					.resource(page.getName()).build()); 
 		
+		String view = page.getTemplate(); 
+		if( StringUtils.isEmpty(view)) {
+			return ServletUtils.doResponseAsHtml(page);
+		} 
+		
+		Assert.notNull(view, "view cannot be null"); 
+		log.debug("final view is '{}'", view );
+		if(StringUtils.endsWith(view, ".ftl")) {
+			ServletUtils.setContentType(ServletUtils.DEFAULT_HTML_CONTENT_TYPE, response);
+			view = StringUtils.removeEnd(view, ".ftl");	
+		}else if (StringUtils.endsWith(view, ".jsp")) {
+			view = StringUtils.removeEnd(view, ".jsp");	
+		}
 		return view;
 	}
+	 
 	
+	private static final AntPathMatcher pathMatcher = new AntPathMatcher(); 
 	
-	AntPathMatcher pathMatcher = new AntPathMatcher(); 
-	UrlPathHelper pathHelper = new UrlPathHelper();
+	private static final UrlPathHelper pathHelper = new UrlPathHelper();
 	
 	/**
 	 * 
@@ -166,16 +168,16 @@ public class DisplayController implements ServletContextAware {
 	 * 
 	 */
 	@RequestMapping(value = {"/view/*/**", "/pages/*/**"}, method = { RequestMethod.POST, RequestMethod.GET })
-    public String pattern (
+    public Object pattern (
     	@RequestParam(value = "version", defaultValue = "1", required = false) int version,
     	@RequestParam(value = "preview", defaultValue = "false", required = false) boolean preview,
     	HttpServletRequest request, 
 	    HttpServletResponse response, 
 	    Model model) 
 	    throws NotFoundException, UnAuthorizedException {	 
-		
-		String view = null;
+		 
  		String path = pathHelper.getLookupPathForRequest(request);
+ 		Page pageToUse = null;
  		for( PathPattern pattern : pageService.getPathPatterns("/display/pages") )
  		{ 	
  			boolean isPattern = pathMatcher.isPattern(pattern.getPattern()); 
@@ -205,7 +207,9 @@ public class DisplayController implements ServletContextAware {
  				}
  				model.addAttribute("__page", page); 
  				model.addAttribute("__variables", variables);  
- 				view = page.getTemplate();
+ 				
+ 				pageToUse = page ;
+ 				
  				if(StringUtils.isNotEmpty(page.getScript())) {
  					View _view = communityGroovyService.getService(page.getScript(), View.class );
  					try {
@@ -220,20 +224,28 @@ public class DisplayController implements ServletContextAware {
  							.objectTypeAndObjectId(Models.PAGE.getObjectType(), page.getPageId())
  							.action(AuditLogEvent.READ)
  							.code(this.getClass().getName())
- 							.resource(page.getName()).build()); 
- 				
+ 							.resource(page.getName()).build()); 		
  				break;
  			}
  		}
  		
-		view = StringUtils.defaultIfBlank(view, configService.getLocalProperty("view.html.page"));
+ 		if( pageToUse == null)
+ 		{
+ 			response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+            return null;
+ 		}
+ 		
+ 		String view = pageToUse.getTemplate(); 
+ 		if( StringUtils.isEmpty(view)) {
+			return ServletUtils.doResponseAsHtml(pageToUse);
+		} 
+		
 		if(StringUtils.endsWith(view, ".ftl")) {
 			ServletUtils.setContentType(ServletUtils.DEFAULT_HTML_CONTENT_TYPE, response);
 			view = StringUtils.removeEnd(view, ".ftl");	
 		}else if (StringUtils.endsWith(view, ".jsp")) {
 			view = StringUtils.removeEnd(view, ".jsp");	
 		}
-		
 		return view;
 	}
 

@@ -119,6 +119,7 @@ public class CommunityAuthenticationSuccessHandler extends SimpleUrlAuthenticati
 	
 	protected void createJsonViewAndRender(Map<String, ?> model, HttpServletRequest request,
 			HttpServletResponse response) throws Exception {
+		response.setHeader("Access-Control-Allow-Origin","*");
 		MappingJackson2JsonView view = new MappingJackson2JsonView();
 		view.setExtractValueFromSingleKeyModel(true);
 		view.setModelKey("item");

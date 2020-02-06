@@ -27,6 +27,8 @@ public interface CommentDao {
 	
 	public abstract void updateComment(Comment comment);
 	
+	public abstract void deleteComment(Comment comment);
+	
 	public abstract ModelObjectTreeWalker getTreeWalker (int objectType, long objectId);
 
 }

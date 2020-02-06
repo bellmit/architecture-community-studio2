@@ -13,7 +13,12 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.io.FileUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.mobile.device.Device;
 import org.springframework.mobile.device.DeviceUtils;
 import org.springframework.security.web.savedrequest.HttpSessionRequestCache;
@@ -26,10 +31,13 @@ import org.springframework.web.servlet.support.RequestContext;
 
 import com.fasterxml.jackson.databind.util.ISO8601DateFormat;
 
+import architecture.community.page.Page;
 import architecture.ee.util.StringUtils;
 
 public class ServletUtils {
 
+	private static final Logger log = LoggerFactory.getLogger(ServletUtils.class);
+	
 	/** 디폴트로 웹 페이지 컨텐츠 타입. */
 	public static final String DEFAULT_HTML_CONTENT_TYPE = "text/html;charset=UTF-8";
 	
@@ -39,6 +47,13 @@ public class ServletUtils {
 	
 	private static final ISO8601DateFormat formatter = new ISO8601DateFormat();
 
+	public static ResponseEntity<String> doResponseAsHtml(Page page){
+		log.debug("reseponse as html.");
+		HttpHeaders httpHeaders = new HttpHeaders();
+		httpHeaders.setContentType(org.springframework.http.MediaType.TEXT_HTML);
+		return new ResponseEntity( page.getBodyHtml(), httpHeaders, HttpStatus.OK);
+	}
+	
 	public static Long getStringAsLong(String value) {
 		try {
 			return Long.parseLong(value);
@@ -73,8 +88,7 @@ public class ServletUtils {
 	 * @param response
 	 * @return
 	 */
-	public static String getReturnUrl(HttpServletRequest request, HttpServletResponse response) {
-		
+	public static String getReturnUrl(HttpServletRequest request, HttpServletResponse response) { 
 		RequestCache requestCache = new HttpSessionRequestCache();
 		SavedRequest savedRequest = requestCache.getRequest(request, response);
 		if (savedRequest == null) {
@@ -84,9 +98,7 @@ public class ServletUtils {
 	}
 	
 	
-	public static String getResourceAsString(String location, String encoding, RequestContext context) {
-		 
-		
+	public static String getResourceAsString(String location, String encoding, RequestContext context) { 
 		try {
 			Resource resource = context.getWebApplicationContext().getResource(location);
 			if( resource.exists() ) {

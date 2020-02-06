@@ -28,6 +28,7 @@ import org.springframework.web.context.request.NativeWebRequest;
 import architecture.community.announce.Announce;
 import architecture.community.announce.AnnounceNotFoundException;
 import architecture.community.announce.AnnounceService;
+import architecture.community.audit.annotation.Audit;
 import architecture.community.exception.NotFoundException;
 import architecture.community.exception.UnAuthorizedException;
 import architecture.community.image.Image;
@@ -75,6 +76,7 @@ public class ServicesAnnouncesDataController {
 	 * ANNOUNCE API 
 	******************************************/
 	
+
 	@Secured({ "ROLE_ADMINISTRATOR", "ROLE_SYSTEM", "ROLE_DEVELOPER", "ROLE_OPERATOR"})
 	@RequestMapping(value = "/0/save-or-update.json", method = RequestMethod.POST)
 	@ResponseBody
@@ -155,6 +157,11 @@ public class ServicesAnnouncesDataController {
 		return announce;
 	}
 	
+	
+	@Audit(action="LIST_ANNOUNCES", 
+		   applicationCode = "LIST_ANNOUNCES",
+		   actionResolverName="LIST_ANNOUNCES",  
+		   resourceResolverName="GRANT_SERVICE_TICKET_RESOURCE_RESOLVER")
 	@Secured({ "ROLE_ADMINISTRATOR", "ROLE_SYSTEM", "ROLE_DEVELOPER", "ROLE_OPERATOR"})
     @RequestMapping(value = "/list.json", method = { RequestMethod.POST, RequestMethod.GET })
     @ResponseBody

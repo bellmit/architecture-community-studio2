@@ -24,6 +24,8 @@ public interface CommentService {
 	public abstract Comment getComment(long commentId) throws CommentNotFoundException;
 
 	public abstract void update(Comment comment);
+	
+	public abstract void delete(Comment comment);
 
 	public abstract void setBody(Comment comment, String text);
 

@@ -160,6 +160,8 @@ public class DefaultAttachment extends PropertyModelObjectAwareSupport implement
 	}
 
 	public String getExtrnalLink() {
+		if( extrnalLink == null &&  sharedLink != null )
+			return sharedLink.getLinkId();
 		return extrnalLink;
 	}
 

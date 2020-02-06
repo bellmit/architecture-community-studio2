@@ -28,4 +28,5 @@ public interface AuditTrailService {
      */
     void removeAll();
     
+    void updateAll ();
 }

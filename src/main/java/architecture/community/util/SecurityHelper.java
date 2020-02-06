@@ -1,7 +1,6 @@
 package architecture.community.util;
 
 import java.util.Collection;
-import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,6 +42,16 @@ public class SecurityHelper {
 		return ANONYMOUS_USER_DETAILS ;
 	}
 	
+	public static CommuintyUserDetails getUserDetails(Authentication authentication) {	 
+		try { 
+		    Object obj = authentication.getPrincipal();
+		    if (obj instanceof CommuintyUserDetails)
+			return ((CommuintyUserDetails) obj);
+		} catch (Exception ignore) {
+			
+		}
+		return ANONYMOUS_USER_DETAILS ;
+	}
 	
 	public static User getUser() {
 		try {

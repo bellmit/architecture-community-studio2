@@ -7,13 +7,13 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
-import com.fasterxml.jackson.databind.util.ISO8601DateFormat;
+import com.fasterxml.jackson.databind.util.StdDateFormat;
 
 import architecture.ee.exception.RuntimeError;
 
 public class JsonDateDeserializer extends JsonDeserializer<Date> {
  
-    private static final ISO8601DateFormat formatter = new ISO8601DateFormat();
+    private static final StdDateFormat formatter = new StdDateFormat();
 
     @Override
     public Date deserialize(JsonParser jsonparser, DeserializationContext deserializationcontext)

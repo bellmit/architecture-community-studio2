@@ -42,8 +42,7 @@ public class CommunityAuthenticationProvider extends DaoAuthenticationProvider i
 		if (authentication.getCredentials() == null)
 		    throw new BadCredentialsException(CommunityLogLocalizer.getMessage("010101")); 
 		
-		checkLicense(userDetails.getUsername()); 
-		
+		checkLicense(userDetails.getUsername());  
 		try {
 			CommuintyUserDetails user = (CommuintyUserDetails) userDetails;
 			if( user.getUser().isExternal() )

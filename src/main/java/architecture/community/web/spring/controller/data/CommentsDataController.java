@@ -135,7 +135,7 @@ public class CommentsDataController {
 		@RequestParam(value = "objectId", defaultValue = "0", required = false) Long objectId,
 		@PathVariable Long commentId, 
 		NativeWebRequest request)  { 
-		
+		 
 		ModelObjectTreeWalker walker = commentService.getCommentTreeWalker(objectType, objectId); 
 		int totalSize = walker.getChildCount(commentId); 
 		List<Comment> list = walker.children(commentId, new ObjectLoader<Comment>() {
@@ -150,15 +150,16 @@ public class CommentsDataController {
 	@RequestMapping(value = "/0/save_or_update.json", method = { RequestMethod.POST, RequestMethod.GET })
 	@ResponseBody
 	public Comment saveOrUpdateTagsObjects(@RequestBody DefaultComment comment, HttpServletRequest request) throws NotFoundException, UnAuthorizedException { 
-		
+		User user = SecurityHelper.getUser();
 		DefaultComment commentToUse = comment ;
-		if( comment.getCommentId() > 0 ) {   
+		if( commentToUse.getCommentId() > 0 ) {    
+			if( !isAllowed( commentToUse.getUser(),  user ) ) {
+				throw new UnAuthorizedException();
+			}
 			commentService.setBody(commentToUse, comment.getBody());
 		}else { 
-			User user = SecurityHelper.getUser();	
 			if( !user.isAnonymous() )
 				commentToUse.setUser(user);
-			
 			String address = request.getRemoteAddr();  
 			commentToUse.setIPAddress(address); 
 			commentService.addComment(commentToUse); 
@@ -168,9 +169,27 @@ public class CommentsDataController {
 	
 	@RequestMapping(value = "/0/delete.json", method = { RequestMethod.POST })
 	@ResponseBody
-	public Result deleteTag(@RequestBody DefaultComment comment, NativeWebRequest request) throws NotFoundException {  
-		
-		
+	public Result deleteComment(@RequestBody DefaultComment comment, NativeWebRequest request) throws NotFoundException, UnAuthorizedException {  
+		User user = SecurityHelper.getUser(); 
+		if( comment.getCommentId() > 0 ) { 
+			Comment commentToUse = commentService.getComment(comment.getCommentId());
+			if( !isAllowed( comment.getUser(),  user ) ) {
+				throw new UnAuthorizedException();
+			}
+			commentService.delete(commentToUse);
+		}
 		return Result.newResult();
 	}
+	
+	
+	private boolean isAllowed(User owner, User me) {
+		boolean isAllowed = false;
+		if( SecurityHelper.isUserInRole("ROLE_ADMINISTRATOR,ROLE_SYSTEM,ROLE_DEVELOPER,ROLE_OPERATOR"))
+			return true;
+		if( owner.getUserId() > 0 && me.getUserId() > 0 &&  owner.getUserId() == me.getUserId() ) {
+			isAllowed = true;
+		}
+		return true;
+	}
+	
 }

@@ -12,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -36,6 +37,7 @@ import architecture.community.model.Models;
 import architecture.community.query.CustomQueryService;
 import architecture.community.share.SharedLink;
 import architecture.community.share.SharedLinkService;
+import architecture.community.tag.TagService;
 import architecture.community.user.User;
 import architecture.community.util.SecurityHelper;
 import architecture.community.web.model.DataSourceRequest;
@@ -62,8 +64,61 @@ public class ResourcesDataController extends AbstractResourcesDataController {
 	@Qualifier("imageService") 
 	private ImageService imageService;
  
-	private Logger log = LoggerFactory.getLogger(ResourcesDataController.class);
+	@Autowired( required = false) 
+	@Qualifier("tagService")
+	private TagService tagService;
+	
+	private Logger log = LoggerFactory.getLogger(ResourcesDataController.class); 
  
+	@RequestMapping(value = "/data/files/list.json", method = { RequestMethod.POST, RequestMethod.GET })
+	@ResponseBody
+	public ResponseEntity<ItemList> getAttachments(
+		@RequestBody DataSourceRequest dataSourceRequest, 
+		@RequestParam(value = "fields", defaultValue = "none", required = false) String fields,
+		NativeWebRequest request) throws UnAuthorizedException { 
+		
+		User user = SecurityHelper.getUser();
+		//if(user.isAnonymous())
+		//	throw new UnAuthorizedException("No Authorized. Please signin first.");
+		
+		
+		boolean includeLink = org.apache.commons.lang3.StringUtils.contains(fields, "link");
+		boolean includeTags = org.apache.commons.lang3.StringUtils.contains(fields, "tags");  
+		
+		if( !dataSourceRequest.getData().containsKey("objectType")) {
+			dataSourceRequest.getData().put("objectType", -1);
+		}	
+		if( !dataSourceRequest.getData().containsKey("objectId") ) {
+			dataSourceRequest.getData().put("objectId", -1);
+		} 
+		dataSourceRequest.setStatement("COMMUNITY_WEB.COUNT_ATTACHMENT_BY_REQUEST");
+		int totalCount = customQueryService.queryForObject(dataSourceRequest, Integer.class);
+		dataSourceRequest.setStatement("COMMUNITY_WEB.SELECT_ATTACHMENT_IDS_BY_REQUEST"); 
+		
+		List<Long> items = customQueryService.list(dataSourceRequest, Long.class);
+		List<Attachment> attachments = new ArrayList<Attachment>();		
+		for( Long id : items ) {
+			try {
+				Attachment attachment = attachmentService.getAttachment(id); 
+				if( includeLink && sharedLinkService != null) {
+					try {
+						SharedLink link = sharedLinkService.getSharedLink(Models.ATTACHMENT.getObjectType(), attachment.getAttachmentId());
+						((DefaultAttachment) attachment ).setSharedLink(link);
+					} catch (Exception ignore) {}	
+				}
+				
+				if( includeTags && tagService!= null ) {
+					String tags = tagService.getTagsAsString(Models.ATTACHMENT.getObjectType(), attachment.getAttachmentId());
+					((DefaultAttachment)attachment).setTags( tags );
+				} 
+				attachments.add(attachment); 
+			} catch (NotFoundException e) {
+			}
+		}
+		return ResponseEntity.ok( new ItemList(attachments, totalCount) );
+	}	
+	
+	
     @RequestMapping(value = "/data/files/0/upload.json", method = RequestMethod.POST)
     @ResponseBody
     public List<Attachment> uploadFiles (

@@ -7,8 +7,8 @@ import com.fasterxml.jackson.core.util.MinimalPrettyPrinter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 
-public abstract class AbstractStringAuditTrailService implements AuditTrailService {
-
+public abstract class AbstractStringAuditTrailService implements AuditTrailService { 
+	
 	private final ObjectMapper mapper = new ObjectMapper().findAndRegisterModules();
 
     public enum AuditFormats {

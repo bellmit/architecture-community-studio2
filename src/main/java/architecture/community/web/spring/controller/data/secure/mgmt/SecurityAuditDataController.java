@@ -68,7 +68,7 @@ public class SecurityAuditDataController extends AbstractResourcesDataController
 	 * @throws IOException
 	 */
 	@Secured({ "ROLE_ADMINISTRATOR", "ROLE_SYSTEM", "ROLE_DEVELOPER"})
-	@RequestMapping(value = "/script/save-or-update.json", method = { RequestMethod.POST })
+	@RequestMapping(value = "/config/save-or-update.json", method = { RequestMethod.POST })
     @ResponseBody
     public FileInfo saveOrUpdate(
     		@PathVariable String type, 

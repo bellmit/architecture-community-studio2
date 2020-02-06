@@ -16,6 +16,8 @@ public class CommunityConstants {
     public static final String LOCALE_COUNTRY_PROP_NAME = "locale.country";
     public static final String LOCALE_CHARACTER_ENCODING_PROP_NAME = "locale.characterEncoding";
     public static final String LOCALE_TIMEZONE_PROP_NAME = "locale.timeZone";
+
+ 
     
     /** VIER RENDER */
     public static final String VIEW_RENDER_FREEMARKER_PROP_NAME = "view.render.freemarker";
@@ -37,7 +39,7 @@ public class CommunityConstants {
     
     /** SERVICES AUDIT */
     public static final String SERVICES_AUDIT_ENABLED_PROP_NAME = "services.audit.enabled";
-
+    public static final String SERVICES_AUDIT_DEBUG_ENABLED_PROP_NAME = "services.audit.debug.enabled";
     /** SERVICES VIEWCOUNT */
     public static final String SERVICES_VIEWCOUNT_ENABLED_PROP_NAME = "services.viewcount.enabled";    
     

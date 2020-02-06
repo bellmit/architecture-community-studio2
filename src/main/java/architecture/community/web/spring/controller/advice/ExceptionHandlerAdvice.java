@@ -33,13 +33,15 @@ import architecture.community.web.model.Result;
 public class ExceptionHandlerAdvice {
 	
 	private static final Logger logger = LoggerFactory.getLogger(ExceptionHandlerAdvice.class);
-	
 	@ExceptionHandler
 	@ResponseBody
 	public Result handleExceptioin(HttpServletRequest request, HttpServletResponse response, Exception e){ 
 		logger.info("Exception Occured:: URL="+request.getRequestURL());
 		logger.debug("Details ---" , e);
-		if( e instanceof org.springframework.security.access.AccessDeniedException ){
+		if( e instanceof org.springframework.security.authentication.BadCredentialsException ){
+			response.setStatus(HttpStatus.UNAUTHORIZED.value());
+		}
+		else if( e instanceof org.springframework.security.access.AccessDeniedException ){
 			response.setStatus(HttpStatus.FORBIDDEN.value());
 		}else{
 			response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());

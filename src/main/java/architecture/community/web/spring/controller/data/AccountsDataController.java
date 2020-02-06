@@ -1,5 +1,9 @@
 package architecture.community.web.spring.controller.data;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+
 import javax.servlet.http.HttpServletRequest;
 
 import org.apache.commons.lang3.StringUtils;
@@ -7,6 +11,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -14,11 +24,16 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.context.request.NativeWebRequest;
 
+import architecture.community.security.spring.authentication.jwt.JwtTokenProvider;
+import architecture.community.security.spring.userdetails.CommuintyUserDetails;
 import architecture.community.user.User;
 import architecture.community.user.UserManager;
 import architecture.community.user.UserTemplate;
+import architecture.community.util.SecurityHelper;
 import architecture.community.web.model.DataSourceRequest;
 import architecture.community.web.model.Result;
+import architecture.community.web.spring.controller.data.model.JwtResponse;
+import architecture.community.web.spring.controller.data.model.LoginRequest;
 import architecture.ee.service.ConfigService;
 
 @Controller("accounts-data-controller")
@@ -31,10 +46,38 @@ public class AccountsDataController {
 	@Qualifier("configService")
 	private ConfigService configService;
 	
+	@Autowired(required=false)
+	@Qualifier("authenticationManager")
+	private AuthenticationManager authenticationManager;
+	
+	@Autowired(required=false)
+	@Qualifier("jwtTokenProvider")
+	private JwtTokenProvider jwtTokenProvider;
+	
 	
 	@Autowired(required = false)
 	private UserManager userManager;
 	
+	
+	@RequestMapping(value = "/signin.json", method = { RequestMethod.POST})
+	public ResponseEntity<JwtResponse> authenticateUser(@RequestBody LoginRequest loginRequest) { 
+		
+		Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(loginRequest.getUsername(), loginRequest.getPassword()));
+		SecurityContextHolder.getContext().setAuthentication(authentication);
+		String jwt = jwtTokenProvider.createToken(authentication); 
+		CommuintyUserDetails details = SecurityHelper.getUserDetails(authentication);  
+		return ResponseEntity.ok( new JwtResponse(jwt, details.getUser(), getRoles(details.getAuthorities())));
+		
+	}
+	
+	protected List<String> getRoles(Collection<GrantedAuthority> authorities) {
+		List<String> list = new ArrayList<String>();
+		for (GrantedAuthority auth : authorities) {
+		    list.add(auth.getAuthority());
+		}
+		return list;
+	}
+
 	
 	@RequestMapping(value = "/signup-with-data.json", method = { RequestMethod.POST})
 	@ResponseBody
@@ -112,6 +155,7 @@ public class AccountsDataController {
 		int index = email.indexOf('@');
 		return email.substring(0, index );
 	}
+	
 	
 	private static class UserForm  { 
 		private String username ;

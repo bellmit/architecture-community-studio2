@@ -82,6 +82,13 @@ public class CommunityCommentService extends EventSupport implements CommentServ
 		return comment;
 	}
 
+	public void delete(Comment comment) {
+		if( comment.getCommentId() > 0){
+			commentDao.deleteComment(comment);
+			evictCaches(comment);
+		}
+	}
+	
 	protected void setUserInComment(Comment comment) {
 		long userId = comment.getUser().getUserId();
 		try {
