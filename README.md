@@ -40,7 +40,7 @@
 
 ## Libraries used in theme: 
 
-- Kendo UI
+- Kendo UI 
 The ultimate collection of JavaScript UI components with libraries for jQuery, Angular, React, and Vue. Quickly build eye-catching, high-performance, responsive web applications.
 
 - fancyBox 
@@ -65,4 +65,4 @@ MySQL 8.x
 Oracle
 
 ## TODO
-Spring Cloud 사용을 위해서는 5.0 버전 사용이 필수적임. 
+Spring Cloud 사용을 위해서는 5.0 버전 사용이 필수적임.

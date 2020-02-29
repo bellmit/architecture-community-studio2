@@ -26,9 +26,23 @@
 		<project.dependency.spring.version>4.3.23.RELEASE</project.dependency.spring.version>
 		<project.dependency.spring-security.version>4.2.12.RELEASE</project.dependency.spring-security.version>
 		<javadocExecutable>${java.home}/../bin/javadoc</javadocExecutable>
+		<snippetsDirectory>${project.build.directory}/generated-snippets</snippetsDirectory>
 	</properties>
 
+	<repositories>
+		<repository>
+			<id>podos</id>
+			<url>http://www.podosw.com/artifactory/repo</url>
+		</repository>	
+	</repositories>	
 	<dependencies>
+		<dependency>
+		    <groupId>javax.xml.bind</groupId>
+		    <artifactId>jaxb-api</artifactId>
+		    <version>2.3.1</version>
+		    <scope>runtime</scope>
+		</dependency>
+
 		<!-- FRAMEWORK START -->
 		<dependency>
 			<groupId>architecture</groupId>
@@ -269,14 +283,6 @@
 		</dependency>
 
 
-		<!-- https://mvnrepository.com/artifact/mysql/mysql-connector-java -->
-		<dependency>
-			<groupId>mysql</groupId>
-			<artifactId>mysql-connector-java</artifactId>
-			<version>8.0.16</version>
-		</dependency>
-
-
 		<!-- https://mvnrepository.com/artifact/net.coobird/thumbnailator -->
 		<dependency>
 			<groupId>net.coobird</groupId>
@@ -304,8 +310,83 @@
 			<artifactId>jsoup</artifactId>
 			<version>1.12.1</version>
 		</dependency>
+		<!-- https://mvnrepository.com/artifact/net.sf.javamusictag/jid3lib -->
+		<dependency>
+		    <groupId>net.sf.javamusictag</groupId>
+		    <artifactId>jid3lib</artifactId>
+		    <version>0.5.4</version>
+		</dependency>
 
+		<!-- OAuth client Java lib -->
+		<!-- https://mvnrepository.com/artifact/com.google.code.gson/gson -->
+		<dependency>
+		    <groupId>com.google.code.gson</groupId>
+		    <artifactId>gson</artifactId>
+		    <version>2.8.6</version>
+		</dependency> 
+		
+		<dependency>
+		    <groupId>com.github.scribejava</groupId>
+		    <artifactId>scribejava-apis</artifactId>
+		    <version>6.9.0</version>
+		</dependency>
 
+		<dependency>
+			<groupId>org.jcodec</groupId>
+			<artifactId>jcodec</artifactId>
+			<version>0.2.3</version>
+		</dependency>
+		
+		<dependency>
+			<groupId>org.jcodec</groupId>
+			<artifactId>jcodec-javase</artifactId>
+			<version>0.2.3</version>
+		</dependency>	
+		
+		<!-- DOCUMNET FOR MARKDOWN  -->	
+		<dependency>
+		    <groupId>com.atlassian.commonmark</groupId>
+		    <artifactId>commonmark</artifactId>
+		    <version>0.13.1</version>
+		</dependency> 
+		<!-- Spring rest docs -->
+		<!-- 
+		<dependency>
+		    <groupId>org.springframework.restdocs</groupId>
+		    <artifactId>spring-restdocs-mockmvc</artifactId>
+		    <version>2.0.0.RELEASE</version>
+		</dependency>	
+		 -->
+		 
+		<!--  JWT  -->
+		<!-- https://mvnrepository.com/artifact/io.jsonwebtoken/jjwt -->
+		<dependency>
+		    <groupId>io.jsonwebtoken</groupId>
+		    <artifactId>jjwt</artifactId>
+		    <version>0.9.1</version>
+		</dependency>
+		
+		<!-- COMMON DBCP2 CONNECTION POOL -->
+		<!-- https://mvnrepository.com/artifact/org.apache.commons/commons-dbcp2 -->
+		<dependency>
+		    <groupId>org.apache.commons</groupId>
+		    <artifactId>commons-dbcp2</artifactId>
+		    <version>2.0</version>
+		</dependency>
+
+		<!--  JDBC DRIVER -->
+		<!-- https://mvnrepository.com/artifact/mysql/mysql-connector-java -->
+		<dependency>
+			<groupId>mysql</groupId>
+			<artifactId>mysql-connector-java</artifactId>
+			<version>8.0.16</version>
+		</dependency> 
+		<dependency>
+		    <groupId>com.oracle</groupId>
+		    <artifactId>ojdbc6</artifactId>
+		    <version>11.2.0.4</version>
+		</dependency>
+		
 	</dependencies>
 	<build>
 		<plugins>
@@ -346,6 +427,29 @@
 					</execution>
 				</executions>
 			</plugin>
+			<plugin>
+				<groupId>org.asciidoctor</groupId>
+				<artifactId>asciidoctor-maven-plugin</artifactId>
+				<version>1.5.6</version>
+				<executions>
+					<execution>
+						<id>generate-docs</id>
+						<phase>package</phase>
+						<goals>
+							<goal>process-asciidoc</goal>
+						</goals>
+						<configuration>
+							<backend>html</backend>
+							<doctype>book</doctype>
+							<attributes>
+								<snippets>${snippetsDirectory}</snippets>
+							</attributes>
+							<sourceDirectory>src/docs/asciidocs</sourceDirectory>
+							<outputDirectory>target/generated-docs</outputDirectory>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>		
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
