@@ -20,10 +20,12 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.context.request.NativeWebRequest;
 
 import architecture.community.exception.NotFoundException;
+import architecture.community.user.User;
+import architecture.community.user.UserManager;
 import architecture.community.user.UserProfile;
 import architecture.community.user.UserProfileService;
 import architecture.community.util.DateUtils;
-import architecture.community.util.SecurityHelper;
+import architecture.community.web.model.DataSourceRequest;
 import architecture.community.web.model.Result;
 import architecture.community.web.spring.controller.data.AbstractResourcesDataController;
 import architecture.community.web.util.ServletUtils;
@@ -47,6 +49,10 @@ public class ServicesProfileDataController extends AbstractResourcesDataControll
 	@Autowired(required=false)
 	@Qualifier("customUserProfileService")
 	private UserProfileService profileService; 
+	
+	@Autowired(required = false) 
+	@Qualifier("userManager")
+	private UserManager userManager;
 	
 	public ServicesProfileDataController() { 
 	}
@@ -108,17 +114,24 @@ public class ServicesProfileDataController extends AbstractResourcesDataControll
 	@Secured({ "ROLE_ADMINISTRATOR", "ROLE_SYSTEM", "ROLE_DEVELOPER"})
 	@RequestMapping(value = "/test.json", method = { RequestMethod.POST, RequestMethod.GET })
     @ResponseBody
-    public Result testConnection(NativeWebRequest request) {   
+    public Result testConnection(
+    	@RequestBody DataSourceRequest dataSourceRequest,
+    	NativeWebRequest request) {   
+		
+		long testUserId = dataSourceRequest.getDataAsLong("testUserId", 0L); 
 		Result result = Result.newResult();
 		log.debug("Profile Service Enabled  : {}", profileService.isEnabled() );
 		if( profileService.isEnabled())
 		{
 			log.debug("Test .....");
 			try {
-				UserProfile p = profileService.getUserProfile(SecurityHelper.getUser());
+				User testUser = userManager.getUser(testUserId);
+				log.debug("get profile for  {}", testUser.getUsername() );
+				UserProfile p = profileService.getUserProfile( testUser );
 				result.getData().put("profile", p);
 				log.debug("Test Connection Successed.");
 			} catch (Exception e) {
+				log.error(e.getMessage(), e);
 				result.setError(e);
 			}
 		}

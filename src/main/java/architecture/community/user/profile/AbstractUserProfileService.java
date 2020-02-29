@@ -4,6 +4,7 @@ import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
 
+import org.jcodec.common.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
@@ -18,6 +19,7 @@ import architecture.community.query.dao.CustomQueryJdbcDao;
 import architecture.community.user.User;
 import architecture.community.user.UserProfile;
 import architecture.community.user.UserProfileService;
+import architecture.community.util.CommunityConstants;
 import architecture.ee.service.ConfigService;
 
 public abstract class AbstractUserProfileService implements UserProfileService , InitializingBean {
@@ -35,67 +37,83 @@ public abstract class AbstractUserProfileService implements UserProfileService ,
 	private com.google.common.cache.LoadingCache<Long, UserProfile> profileCache = null;
 	 
 	public boolean isCacheable() {
-		return configService.getApplicationBooleanProperty("services.user.profile.cacheable", false);
+		return configService.getApplicationBooleanProperty(CommunityConstants.SERVICES_USER_PROFILE_CACHEABLE_PROP_NAME, false);
 	}
 
 	public void setCacheable(boolean cacheable) {
-		configService.setApplicationProperty("services.user.profile.cacheable", Boolean.toString(cacheable));
+		configService.setApplicationProperty(CommunityConstants.SERVICES_USER_PROFILE_CACHEABLE_PROP_NAME, Boolean.toString(cacheable));
 	}
 
 	public void setEnabled(boolean enabled) {
-		configService.setApplicationProperty("services.user.profile.enabled", Boolean.toString(enabled));
+		configService.setApplicationProperty(CommunityConstants.SERVICES_USER_PROFILE_ENABLED_PROP_NAME, Boolean.toString(enabled));
 	}
 
 	public boolean isEnabled() {
-		return configService.getApplicationBooleanProperty("services.user.profile.enabled", false);
+		return configService.getApplicationBooleanProperty(CommunityConstants.SERVICES_USER_PROFILE_ENABLED_PROP_NAME, false);
 	}	
 	
 	public void afterPropertiesSet() throws Exception { 
-		log.debug("Creating cache for User Profile.");
+		
 		if( isCacheable() ) {
 			createCacheIfNotExist();
 		}
 	}
 	
 	private void createCacheIfNotExist() {
-		if( profileCache == null)
-		profileCache = CacheBuilder.newBuilder().maximumSize(5000).expireAfterAccess( 10, TimeUnit.MINUTES).build(		
-			new CacheLoader<Long, UserProfile>(){			
-				public UserProfile load(Long userId) throws Exception {
-					return loadUserProfile(userId);
-			}}
-		);
+		if( profileCache == null) {
+			log.debug("Creating cache for User Profile.");
+			profileCache = CacheBuilder.newBuilder().maximumSize(5000).expireAfterAccess( 10, TimeUnit.MINUTES).build(		
+				new CacheLoader<Long, UserProfile>(){			
+					public UserProfile load(Long userId) throws Exception {
+						return loadUserProfile(userId);
+				}}
+			);
+		}
 	}
 	
 	public void refresh () {
-		
-		createCacheIfNotExist();
-		
+		createCacheIfNotExist(); 
 		if( isCacheable()  && profileCache != null ) {  
 			profileCache.invalidateAll(); 
 		}
-		
 	} 
 	
 	public UserProfile getUserProfile(User user) throws NotFoundException { 
+		UserProfile profile = null;
 		try {
-			if( isCacheable() )
-				return profileCache.get(user.getUserId());
-			else
-				return loadUserProfile (user.getUserId()); 
+			if( isCacheable() ) {
+				createCacheIfNotExist(); 
+				profile = profileCache.get(user.getUserId());
+			} else {
+				profile = loadUserProfile (user.getUserId()); 
+			}
+			setProfileWithUser(profile, user);
+			return profile;
 		} catch (Exception e) {
 			String msg = (new StringBuilder()).append("Unable to find profile object by ").append(user.getUserId()).toString(); 
 			throw new NotFoundException(msg, e);
 		}
 	} 
+	
+	private void setProfileWithUser( UserProfile profile , User user ) {
+		if( profile != null && user != null && profile instanceof CustomUserProfile) {
+			CustomUserProfile profileToUse = (CustomUserProfile) profile;
+			if( StringUtils.isEmpty( profile.getName() ) && !StringUtils.isEmpty(user.getName()) )
+				profileToUse.setName( user.getName() );
+			if( StringUtils.isEmpty( profile.getUsername() ) && !StringUtils.isEmpty(user.getUsername()) )
+				profileToUse.setUsername( user.getUsername() );
+			if( StringUtils.isEmpty( profile.getEmail() ) && !StringUtils.isEmpty(user.getEmail()) )
+				profileToUse.setEmail( user.getEmail() );	
+		}
+	}
 	 
 	public void saveOrUpdate(User user, UserProfile profile) {  
 		saveOrUpdate(profile);
-		if( isCacheable()  && profileCache != null )
+		if( isCacheable() && profileCache != null )
 			profileCache.invalidate(user.getUserId());
 	}	
 
-	protected abstract UserProfile loadUserProfile( Long userId ) throws  Exception;	
+	protected abstract UserProfile loadUserProfile( Long userId ) throws  Exception; 
 	
 	protected abstract void saveOrUpdate( UserProfile profile ) ; 
 	

@@ -144,33 +144,49 @@ public class CommunityAdminService implements ApplicationContextAware , Manageme
 	public CustomQueryJdbcDao createCustomQueryJdbcDao(String dataSource) {  
 		try {
 			DataSource dataSourceToUse = applicationContext.getBean(dataSource, DataSource.class);
+			return createCustomQueryJdbcDao(dataSourceToUse);
+		} catch (NoSuchBeanDefinitionException e) {
+			throw new ComponentNotFoundException(CommunityLogLocalizer.format("012004", dataSource, DataSource.class.getName() ), e);
+		} 
+	}  
+	
+	public CustomQueryJdbcDao createCustomQueryJdbcDao(DataSource dataSource) {  
+		try { 
 			CustomQueryJdbcDao customQueryJdbcDao = new CustomQueryJdbcDao();
 			autowire(customQueryJdbcDao);
-			customQueryJdbcDao.setDataSource(dataSourceToUse);
+			customQueryJdbcDao.setDataSource(dataSource);
 			return customQueryJdbcDao;
 		} catch (NoSuchBeanDefinitionException e) {
 			throw new ComponentNotFoundException(CommunityLogLocalizer.format("012004", dataSource, DataSource.class.getName() ), e);
 		} 
 	}  
+	
 	 
 	public CustomQueryService createCustomQueryService(String dataSource) {  
-		try {
-			
+		try { 
 			DataSource dataSourceToUse = applicationContext.getBean(dataSource, DataSource.class);
-			CommunityCustomQueryService customQueryService = new CommunityCustomQueryService();
-			autowire(customQueryService);
-			
-			CustomQueryJdbcDao customQueryJdbcDao = new CustomQueryJdbcDao();
-			autowire(customQueryJdbcDao);
-			customQueryJdbcDao.setDataSource(dataSourceToUse); 
-			customQueryService.setCustomQueryJdbcDao(customQueryJdbcDao); 
-			return customQueryService;
+			return createCustomQueryService(dataSourceToUse);
 		} catch (NoSuchBeanDefinitionException e) {
 			throw new ComponentNotFoundException(CommunityLogLocalizer.format("012004", dataSource, DataSource.class.getName() ), e);
 		} 
 	}	
 	
-	
+	public CustomQueryService createCustomQueryService(DataSource dataSource) {  
+		try {  
+			CommunityCustomQueryService customQueryService = new CommunityCustomQueryService();
+			autowire(customQueryService); 
+			
+			CustomQueryJdbcDao customQueryJdbcDao = new CustomQueryJdbcDao();
+			autowire(customQueryJdbcDao); 
+			customQueryJdbcDao.setDataSource(dataSource); 
+			
+			customQueryService.setCustomQueryJdbcDao(customQueryJdbcDao); 
+			
+			return customQueryService;
+		} catch (NoSuchBeanDefinitionException e) {
+			throw new ComponentNotFoundException(CommunityLogLocalizer.format("012004", dataSource, DataSource.class.getName() ), e);
+		} 
+	}	
 	
 	/**
 	 * dataSourceName 에 해당하는 데이터소스가 없는 경우 생성한다.

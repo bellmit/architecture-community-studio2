@@ -56,6 +56,11 @@ public class CommunityConstants {
     public static final String SERVICES_MAIL_SSL_PROP_NAME = "services.mail.ssl";
     public static final String SERVICES_MAIL_DEFAULT_ENCODING_PROP_NAME = "services.mail.defaultEncoding"; 
     
+    /** SERVICES PROFILE */
+    public static final String SERVICES_USER_PROFILE_ENABLED_PROP_NAME = "services.user.profile.enabled";
+    
+    public static final String SERVICES_USER_PROFILE_CACHEABLE_PROP_NAME = "services.user.profile.cacheable";
+    
 	public enum Platform {
 		
 		WINDOWS(';'), UNIX(':');
