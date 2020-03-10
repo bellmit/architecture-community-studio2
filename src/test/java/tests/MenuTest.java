@@ -27,6 +27,7 @@ import architecture.community.admin.menu.SetupMenuService;
 		"classpath:application-community-context.xml",	
 		"classpath:context/community-user-context.xml",
 		"classpath:context/community-setup-context.xml",
+		"classpath:context/community-utils-context.xml",
 		"classpath:context/community-core-context.xml"})
 public class MenuTest {
 
@@ -46,8 +47,7 @@ public class MenuTest {
 			logger.debug( "MenuNames: {}" , set);
 		}
 	}
-	
-	@Test
+
 	public void createMenuXml() {
 		try {
 			// First create Stax components we need
