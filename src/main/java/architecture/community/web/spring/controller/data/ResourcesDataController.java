@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.annotation.Secured;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -70,6 +71,7 @@ public class ResourcesDataController extends AbstractResourcesDataController {
 	
 	private Logger log = LoggerFactory.getLogger(ResourcesDataController.class); 
  
+	
 	@RequestMapping(value = "/data/files/list.json", method = { RequestMethod.POST, RequestMethod.GET })
 	@ResponseBody
 	public ResponseEntity<ItemList> getAttachments(
@@ -80,7 +82,6 @@ public class ResourcesDataController extends AbstractResourcesDataController {
 		User user = SecurityHelper.getUser();
 		//if(user.isAnonymous())
 		//	throw new UnAuthorizedException("No Authorized. Please signin first.");
-		
 		
 		boolean includeLink = org.apache.commons.lang3.StringUtils.contains(fields, "link");
 		boolean includeTags = org.apache.commons.lang3.StringUtils.contains(fields, "tags");  
@@ -95,26 +96,8 @@ public class ResourcesDataController extends AbstractResourcesDataController {
 		int totalCount = customQueryService.queryForObject(dataSourceRequest, Integer.class);
 		dataSourceRequest.setStatement("COMMUNITY_WEB.SELECT_ATTACHMENT_IDS_BY_REQUEST"); 
 		
-		List<Long> items = customQueryService.list(dataSourceRequest, Long.class);
-		List<Attachment> attachments = new ArrayList<Attachment>();		
-		for( Long id : items ) {
-			try {
-				Attachment attachment = attachmentService.getAttachment(id); 
-				if( includeLink && sharedLinkService != null) {
-					try {
-						SharedLink link = sharedLinkService.getSharedLink(Models.ATTACHMENT.getObjectType(), attachment.getAttachmentId());
-						((DefaultAttachment) attachment ).setSharedLink(link);
-					} catch (Exception ignore) {}	
-				}
-				
-				if( includeTags && tagService!= null ) {
-					String tags = tagService.getTagsAsString(Models.ATTACHMENT.getObjectType(), attachment.getAttachmentId());
-					((DefaultAttachment)attachment).setTags( tags );
-				} 
-				attachments.add(attachment); 
-			} catch (NotFoundException e) {
-			}
-		}
+		List<Long> attachmentIDs = customQueryService.list(dataSourceRequest, Long.class);
+		List<Attachment> attachments = getAttachments(attachmentIDs, includeLink, includeTags);
 		return ResponseEntity.ok( new ItemList(attachments, totalCount) );
 	}	
 	
@@ -182,14 +165,45 @@ public class ResourcesDataController extends AbstractResourcesDataController {
 		NativeWebRequest request) throws NotFoundException, UnAuthorizedException {
 		
 		User me = SecurityHelper.getUser(); 
-		Attachment attachment = 	attachmentService.getAttachment(attachmentId);
-		if( isAllowed( attachment.getUser(),  me) ) {
+		Attachment attachment = attachmentService.getAttachment(attachmentId);
+		if( Utils.isAllowed( attachment.getUser(),  me) ) {
 			deleteAttachment(attachment);
 		}else {
 			throw new UnAuthorizedException();
 		} 
 		return Result.newResult();
 	}	
+	
+	
+
+	@Secured({ "ROLE_ADMINISTRATOR", "ROLE_SYSTEM", "ROLE_DEVELOPER"})
+	@RequestMapping(value = "/data/images/list.json", method = { RequestMethod.POST, RequestMethod.GET })
+	@ResponseBody
+	public ItemList getImages(
+		@RequestBody DataSourceRequest dataSourceRequest, 
+		@RequestParam(value = "fields", defaultValue = "none", required = false) String fields,
+		NativeWebRequest request) { 
+		
+		boolean includeImageLink = org.apache.commons.lang3.StringUtils.contains(fields, "imageLink");  
+		boolean includeTags = org.apache.commons.lang3.StringUtils.contains(fields, "tags");  
+		
+		log.debug("fields link : {} , tags : {}", includeImageLink, includeTags);
+		
+		if( !dataSourceRequest.getData().containsKey("objectType")) {
+			dataSourceRequest.getData().put("objectType", -1);
+		}	
+		if( !dataSourceRequest.getData().containsKey("objectId") ) {
+			dataSourceRequest.getData().put("objectId", -1);
+		} 
+		dataSourceRequest.setStatement("COMMUNITY_WEB.COUNT_IMAGE_BY_REQUEST");
+		int totalCount = customQueryService.queryForObject(dataSourceRequest, Integer.class);
+		dataSourceRequest.setStatement("COMMUNITY_WEB.SELECT_IMAGE_IDS_BY_REQUEST");
+		List<Long> imageIDs = customQueryService.list(dataSourceRequest, Long.class);
+		
+		List<Image> images = getImages (imageIDs, includeImageLink, includeTags);
+		return new ItemList(images, totalCount );
+	}	
+	
 	
 	@RequestMapping(value = "/data/images/0/upload.json", method = RequestMethod.POST)
     @ResponseBody
@@ -210,6 +224,7 @@ public class ResourcesDataController extends AbstractResourcesDataController {
 		    String fileName = names.next();
 		    MultipartFile mpf = request.getFile(fileName);
 		    InputStream is = mpf.getInputStream();
+		    
 		    log.debug("upload file:{}, size:{}, type:{} ", mpf.getOriginalFilename(), mpf.getSize() , mpf.getContentType() ); 
 		    Image image ;
 		    if( imageId > 0) {
@@ -263,7 +278,7 @@ public class ResourcesDataController extends AbstractResourcesDataController {
 		User me = SecurityHelper.getUser();
 		
 		Image image = 	imageService.getImage(imageId);
-		if( isAllowed( image.getUser(),  me) ) {
+		if( Utils.isAllowed( image.getUser(),  me) ) {
 			imageService.deleteImage(image);
 		}else {
 			throw new UnAuthorizedException();
@@ -271,14 +286,5 @@ public class ResourcesDataController extends AbstractResourcesDataController {
 		return Result.newResult();
 	}	
 	
-	
-	private boolean isAllowed(User owner, User me) {
-		boolean isAllowed = false;
-		if( SecurityHelper.isUserInRole("ROLE_ADMINISTRATOR,ROLE_SYSTEM,ROLE_DEVELOPER,ROLE_OPERATOR"))
-			return true;
-		if( owner.getUserId() > 0 && me.getUserId() > 0 &&  owner.getUserId() == me.getUserId() ) {
-			isAllowed = true;
-		}
-		return true;
-	}
+
 }

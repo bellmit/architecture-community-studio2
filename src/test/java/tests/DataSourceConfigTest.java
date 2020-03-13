@@ -29,6 +29,7 @@ import architecture.ee.util.ApplicationConstants;
 		"classpath:application-community-context.xml",	
 		"classpath:context/community-user-context.xml",
 		"classpath:context/community-setup-context.xml",
+		"classpath:context/community-utils-context.xml",
 		"classpath:context/community-core-context.xml"})
 public class DataSourceConfigTest {
 

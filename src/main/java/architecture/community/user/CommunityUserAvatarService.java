@@ -8,6 +8,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -25,8 +27,11 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
 import com.google.common.eventbus.Subscribe;
 
+import architecture.community.streams.Streams;
 import architecture.community.user.dao.UserAvatarDao;
 import architecture.community.user.event.UserRemovedEvent;
 import architecture.ee.exception.RuntimeError;
@@ -66,10 +71,14 @@ public class CommunityUserAvatarService implements UserAvatarService {
 	@Inject
 	@Qualifier("avatarImageCache")
     private Cache avatarImageCache;
-    
-    
+
+	 
 	private File imageDir;
 	
+	public CommunityUserAvatarService() {
+	}
+
+
 	@Subscribe
 	@EventListener 
 	@Async
@@ -80,6 +89,32 @@ public class CommunityUserAvatarService implements UserAvatarService {
 			removeAvatarImage(img);
 	}
 	
+	
+	/**
+	 * Primary Avatar Image 를 리턴한다.
+	 */
+	public AvatarImage getAvatarImage(User user) throws AvatarImageNotFoundException { 
+		
+		AvatarImage image = getPrimaryUserAvatar(user);
+		if( image == null)
+			throw new AvatarImageNotFoundException();
+		
+		return image;
+	}
+
+	public AvatarImage getPrimaryUserAvatar(User user) {  
+		List<AvatarImage> list = getAvatarImages(user);
+		AvatarImage finalAvatarImage = null;
+		for (AvatarImage image : list) {
+		    if (image.isPrimary())
+		    {	
+		    	finalAvatarImage = image;
+		    	break;
+		    }
+		}
+		log.debug("find primary avatar image ({})  for user({})", finalAvatarImage!=null ? finalAvatarImage.getFilename() : "none", user.getUserId());
+		return finalAvatarImage;				  
+	 }
 	
 	public List<AvatarImage> getAvatarImages(User user) {		
 		List<Long> list = getAvatarImageIdList(user.getUserId());		
@@ -102,10 +137,10 @@ public class CommunityUserAvatarService implements UserAvatarService {
 		if (image.getAvatarImageId() < 1) {
 		    // clear cache
 		    List<Long> list = getAvatarImageIdList(image.getUserId());		
-		    for (Long logoImageId : list) {
-				avatarImageCache.remove(logoImageId);
+		    for (Long avatarId : list) {
+				avatarImageCache.remove(avatarId);
 			}
-		    avatarImageIdsCache.remove(image.getUserId());
+		    avatarImageIdsCache.remove(image.getUserId()); 
 		    userAvatarDao.addAvatarImage(image, file);
 		}
 	}
@@ -117,7 +152,7 @@ public class CommunityUserAvatarService implements UserAvatarService {
 		    for (Long logoImageId : list) {
 				avatarImageCache.remove(logoImageId);
 			}
-		    avatarImageIdsCache.remove(image.getUserId());
+		    avatarImageIdsCache.remove(image.getUserId()); 
 		    userAvatarDao.addAvatarImage(image, is);
 		}
 	}
@@ -130,8 +165,9 @@ public class CommunityUserAvatarService implements UserAvatarService {
 			for (Long logoImageId : list) {
 				avatarImageCache.remove(logoImageId);
 			}
-			avatarImageIdsCache.remove(image.getUserId());
+			avatarImageIdsCache.remove(image.getUserId()); 
 			userAvatarDao.removeAvatarImage(image);
+			
 			deleteImageFileCache(image);
 		}		
 	}
@@ -148,19 +184,6 @@ public class CommunityUserAvatarService implements UserAvatarService {
 		}
 		return imageToUse;
 	}
-	
-	/**
-	 * Primary Avatar Image 를 리턴한다.
-	 */
-	public AvatarImage getAvatarImage(User user) throws AvatarImageNotFoundException {
-		List<AvatarImage> list = getAvatarImages(user);
-		for (AvatarImage image : list) {
-		    if (image.isPrimary())
-			return image;
-		}
-		throw new AvatarImageNotFoundException();
-	}
-
  
 	public AvatarImage getAvatareImageByUsername(String username) throws AvatarImageNotFoundException, UserNotFoundException {
 		User user = userManager.getUser(username);
@@ -224,15 +247,18 @@ public class CommunityUserAvatarService implements UserAvatarService {
 			File dir = getAvatarImageCacheDir();
 			File file = new File(dir, toThumbnailFilename(image, width, height));
 			File originalFile = getImageFromCacheIfExist(image);
-			
-			log.debug("orignal image source:{}, size:{}, thumbnail: {} , exist: {}.", originalFile.getAbsoluteFile(), originalFile.length(), file.getAbsoluteFile(), file.exists());
+			log.debug("orignal image source:{}, size:{}, thumbnail: {} , exist: {}.", 
+					originalFile.getAbsoluteFile(), 
+					originalFile.length(), 
+					file.getAbsoluteFile(), 
+					file.exists());
 			if (file.exists()) {
 				if (file.length() > 0) {
 					image.setThumbnailSize((int) file.length());
 					return file;
-				} else {
-				}
+				} 
 			}
+			log.debug("create thumbnail image.");
 			BufferedImage originalImage = ImageIO.read(originalFile);
 			if (originalImage.getHeight() < height || originalImage.getWidth() < width) {
 				image.setThumbnailSize(0);

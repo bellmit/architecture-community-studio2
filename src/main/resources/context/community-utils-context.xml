@@ -17,4 +17,8 @@
 	
 	<beans:bean id="customQueryService" class="architecture.community.query.CommunityCustomQueryService" />
  
+ 	<beans:bean id="communityEventPublisher" class="architecture.community.services.CommunitySpringEventPublisher" />
+	
+	<beans:bean id="propertyDao" class="architecture.ee.jdbc.property.dao.impl.JdbcPropertyDao" p:dataSource-ref="dataSource" />
+	
 </beans:beans> 

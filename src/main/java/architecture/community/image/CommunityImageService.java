@@ -38,6 +38,10 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.filefilter.FileFilterUtils;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.jcodec.api.FrameGrab;
+import org.jcodec.api.JCodecException;
+import org.jcodec.common.model.Picture;
+import org.jcodec.scale.AWTUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.SqlParameterValue;
@@ -314,14 +318,12 @@ public class CommunityImageService extends AbstractAttachmentService implements 
 			log.debug("create thumbnail {}.", file.getAbsolutePath());
 			if (Platform.current() == Platform.WINDOWS) {
 				File tmp = getTemeFile();
-				Thumbnails.of(originalFile).size(width, height).outputFormat("png")
-						.toOutputStream(new FileOutputStream(tmp));
+				Thumbnails.of(originalFile).size(width, height).outputFormat("png").toOutputStream(new FileOutputStream(tmp));
 				image.setThumbnailSize((int) tmp.length());
 				FileUtils.copyFile(tmp, file);
 			} else {
 				try {
-					Thumbnails.of(originalFile).allowOverwrite(true).size(width, height).outputFormat("png")
-							.toOutputStream(new FileOutputStream(file));
+					Thumbnails.of(originalFile).allowOverwrite(true).size(width, height).outputFormat("png").toOutputStream(new FileOutputStream(file));
 				} catch (Throwable e) {
 					log.error(e.getMessage(), e);
 				}
@@ -696,7 +698,7 @@ public class CommunityImageService extends AbstractAttachmentService implements 
 		try {
 			File file = getThumbnailFromCacheIfExist(image, width, height);
 			return FileUtils.openInputStream(file);
-		} catch (IOException e) {
+		} catch (Exception e) {
 			throw new RuntimeError(e.getMessage(), e);
 		}
 	}
@@ -801,30 +803,46 @@ public class CommunityImageService extends AbstractAttachmentService implements 
 		return sb.toString();
 	}
 
-	protected File getThumbnailFromCacheIfExist(Image image, int width, int height) throws IOException {
+	protected File getThumbnailFromCacheIfExist(Image image, int width, int height) throws IOException, JCodecException {
 
-		log.debug("thumbnail generation " + width + "x" + height);
+		log.debug("extracting thumbnail {}x{} for {}", width , height, image.getContentType());
 		File dir = getImageCacheDir();
-		File file = new File(dir, toThumbnailFilename(image, width, height));
-		File originalFile = getImageFromCacheIfExist(image);
-		log.debug("source: " + originalFile.getAbsoluteFile() + ", " + originalFile.length());
-		log.debug("target:" + file.getAbsoluteFile());
-
-		if (file.exists() && file.length() > 0) {
-			image.setThumbnailSize((int) file.length());
-			return file;
+		File targetFile = new File(dir, toThumbnailFilename(image, width, height));
+		File sourceFile = getImageFromCacheIfExist(image);
+		log.debug("source: " + sourceFile.getAbsoluteFile() + ", " + sourceFile.length());
+		log.debug("target:" + targetFile.getAbsoluteFile());
+		if (targetFile.exists() && targetFile.length() > 0) {
+			image.setThumbnailSize((int) targetFile.length());
+			return targetFile;
 		}
-
-		BufferedImage originalImage = ImageIO.read(originalFile);
-		if (originalImage.getHeight() < height || originalImage.getWidth() < width) {
-			image.setThumbnailSize(0);
-			return originalFile;
+		lock.lock(); 
+		try {
+			log.debug("extracting thumbnail from {}", image.getContentType() );
+			if (image.getContentType().startsWith("video")) {  
+				Picture picture = FrameGrab.getFrameFromFile(sourceFile, 0);  
+				log.debug("frame from image {} x {} ", picture.getWidth(), picture.getHeight());
+				//for JDK (jcodec-javase)
+				BufferedImage bufferedImage = AWTUtil.toBufferedImage(picture);
+				ImageIO.write(bufferedImage, IMAGE_PNG_FORMAT, targetFile );  
+				return targetFile;
+			}else
+			if (StringUtils.startsWithIgnoreCase(image.getContentType(), "image")) { 
+				BufferedImage originalImage = ImageIO.read(sourceFile);
+				log.debug("from original image {} x {} ", originalImage.getWidth(), originalImage.getHeight());
+				if (originalImage.getHeight() < height || originalImage.getWidth() < width) {
+					FileUtils.copyFile(sourceFile, targetFile);
+				}else {
+					BufferedImage thumbnail = Thumbnails.of(originalImage).size(width, height).asBufferedImage();
+					ImageIO.write(thumbnail, "png", targetFile);					
+				} 
+				image.setThumbnailSize((int) targetFile.length());
+				return targetFile;	
+			}
+			
+		}finally {
+			lock.unlock();
 		}
-
-		BufferedImage thumbnail = Thumbnails.of(originalImage).size(width, height).asBufferedImage();
-		ImageIO.write(thumbnail, "png", file);
-		image.setThumbnailSize((int) file.length());
-		return file;
+		return null;
 	}
 
 	public void initialize() {

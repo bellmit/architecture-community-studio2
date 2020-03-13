@@ -11,9 +11,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -25,6 +22,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.context.ServletContextAware;
 import org.springframework.web.servlet.View;
+import org.springframework.web.servlet.handler.SimpleUrlHandlerMapping;
 import org.springframework.web.servlet.view.freemarker.FreeMarkerConfig;
 import org.springframework.web.util.UrlPathHelper;
 
@@ -36,6 +34,7 @@ import architecture.community.page.BodyType;
 import architecture.community.page.Page;
 import architecture.community.page.PageMaker;
 import architecture.community.page.PageService;
+import architecture.community.page.PageState;
 import architecture.community.page.PathPattern;
 import architecture.community.security.spring.acls.CommunityAclService;
 import architecture.community.security.spring.acls.PermissionsBundle;
@@ -117,7 +116,8 @@ public class DisplayController implements ServletContextAware {
 		if(StringUtils.isNotEmpty(page.getScript())) {
 			log.debug("page script view : {}", page.getScript() );
 			try {
-				View _view = communityGroovyService.getService(page.getScript(), View.class);
+				boolean useCache = page.getPageState() == PageState.PUBLISHED ? true : false ;
+				View _view = communityGroovyService.getService(page.getScript(), View.class, useCache);
 				_view.render((Map) model, request, response); 
 			} catch (Exception e) { 
 				log.error("Error in render.", e);
@@ -136,30 +136,32 @@ public class DisplayController implements ServletContextAware {
 		
 		if(communitySpringEventPublisher!=null)
 			communitySpringEventPublisher.fireEvent((new AuditLogEvent.Builder(request, response, this))
-					.objectTypeAndObjectId(Models.PAGE.getObjectType(), page.getPageId())
-					.action(AuditLogEvent.READ)
-					.code(this.getClass().getName())
-					.resource(page.getName()).build()); 
+				.objectTypeAndObjectId(Models.PAGE.getObjectType(), page.getPageId())
+				.action(AuditLogEvent.READ)
+				.code(this.getClass().getName())
+				.resource(page.getName()).build()); 
 		
 		String view = page.getTemplate(); 
+		
 		if( StringUtils.isEmpty(view)) {
 			return ServletUtils.doResponseAsHtml(page);
 		} 
 		
 		Assert.notNull(view, "view cannot be null"); 
 		log.debug("final view is '{}'", view );
+		
 		if(StringUtils.endsWith(view, ".ftl")) {
 			ServletUtils.setContentType(ServletUtils.DEFAULT_HTML_CONTENT_TYPE, response);
 			view = StringUtils.removeEnd(view, ".ftl");	
 		}else if (StringUtils.endsWith(view, ".jsp")) {
 			view = StringUtils.removeEnd(view, ".jsp");	
 		}
+		
 		return view;
 	}
 	 
 	
 	private static final AntPathMatcher pathMatcher = new AntPathMatcher(); 
-	
 	private static final UrlPathHelper pathHelper = new UrlPathHelper();
 	
 	/**
@@ -176,7 +178,20 @@ public class DisplayController implements ServletContextAware {
 	    Model model) 
 	    throws NotFoundException, UnAuthorizedException {	 
 		 
- 		String path = pathHelper.getLookupPathForRequest(request);
+		
+		
+		String path = pathHelper.getLookupPathForRequest(request);
+		SimpleUrlHandlerMapping mapping = new SimpleUrlHandlerMapping();
+		log.debug("checking for {}" , path );
+		for( PathPattern pattern : pageService.getPathPatterns("**") ) {
+			log.debug("mapping {} = {}", pattern.getPattern(), mapping.match(request, pattern.getPattern()) );
+			
+		}
+		//mapping.match(request, pattern)
+		
+		
+		
+ 		
  		Page pageToUse = null;
  		for( PathPattern pattern : pageService.getPathPatterns("/display/pages") )
  		{ 	
@@ -211,7 +226,8 @@ public class DisplayController implements ServletContextAware {
  				pageToUse = page ;
  				
  				if(StringUtils.isNotEmpty(page.getScript())) {
- 					View _view = communityGroovyService.getService(page.getScript(), View.class );
+ 					boolean useCache = page.getPageState() == PageState.PUBLISHED ? true : false ;
+ 					View _view = communityGroovyService.getService(page.getScript(), View.class, useCache );
  					try {
 						_view.render((Map) model, request, response);
 					} catch (Exception e) { 

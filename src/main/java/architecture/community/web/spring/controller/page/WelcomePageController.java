@@ -21,6 +21,7 @@ import architecture.community.model.Models;
 import architecture.community.page.Page;
 import architecture.community.page.PageNotFoundException;
 import architecture.community.page.PageService;
+import architecture.community.page.PageState;
 import architecture.community.services.CommunityGroovyService;
 import architecture.community.services.CommunitySpringEventPublisher;
 import architecture.community.util.SecurityHelper;
@@ -78,7 +79,8 @@ public class WelcomePageController {
 			model.addAttribute("__page", page); 
 			log.debug("page template is {}", view );  
 			if( StringUtils.isNotEmpty(page.getScript()) && isSetCommunityGroovyService()) {
-				View _view = communityGroovyService.getService(page.getScript(), View.class);
+				boolean useCache = page.getPageState() == PageState.PUBLISHED ? true : false ;
+				View _view = communityGroovyService.getService(page.getScript(), View.class, useCache);
 				try {
 					_view.render( model.asMap(), request, response);
 					

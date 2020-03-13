@@ -345,7 +345,6 @@ public class CommunityAttachmentService extends AbstractAttachmentService implem
 		return attachmentCacheDir;
 	}
 	
-	private static final String IMAGE_PNG_FORMAT = "png";
 	
 	public boolean hasThumbnail(Attachment attachment){
 		if (StringUtils.endsWithIgnoreCase(attachment.getContentType(), "pdf") || 

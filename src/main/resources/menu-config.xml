@@ -19,29 +19,27 @@
 				<Item name="SIDEBAR_04_01" title="메일" icon="hs-admin-email" location="services-mail" roles="ROLE_SYSTEM,ROLE_ADMINISTRATOR,ROLE_DEVELOPER" />
 				<Item name="SIDEBAR_04_02" title="사용자 프로필" icon="hs-admin-user" location="services-profile" roles="ROLE_SYSTEM,ROLE_ADMINISTRATOR,ROLE_DEVELOPER" />
 				<Item name="SIDEBAR_04_03" title="태그" icon="hs-admin-tag" location="services-tags" roles="ROLE_SYSTEM,ROLE_ADMINISTRATOR,ROLE_DEVELOPER" />
-				<Item name="SIDEBAR_04_04" title="공지" icon="hs-admin-files" location="services-announces" roles="ROLE_SYSTEM,ROLE_ADMINISTRATOR,ROLE_DEVELOPER,ROLE_OPERATOR" />
-				<Item name="SIDEBAR_04_05" title="노트" icon="hs-admin-files" location="services-notes" roles="ROLE_SYSTEM,ROLE_ADMINISTRATOR,ROLE_DEVELOPER" /> 
+				<Item name="SIDEBAR_04_04" title="공지" icon="hs-admin-announcement" location="services-announces" roles="ROLE_SYSTEM,ROLE_ADMINISTRATOR,ROLE_DEVELOPER,ROLE_OPERATOR" />
 				<Item name="SIDEBAR_04_06" title="뷰 카운트" icon="hs-admin-email" location="services-viewcounts" roles="ROLE_SYSTEM,ROLE_ADMINISTRATOR,ROLE_DEVELOPER" />
 				<Item name="SIDEBAR_04_07" title="시퀀서" icon="hs-admin-files" location="services-sequencers" roles="ROLE_SYSTEM,ROLE_ADMINISTRATOR,ROLE_DEVELOPER" />
-				<Item name="SIDEBAR_04_08" title="코멘트" icon="hs-admin-comment" location="services-comments" roles="ROLE_SYSTEM,ROLE_ADMINISTRATOR,ROLE_DEVELOPER" />
 			</Item>	
 			<Item name="SIDEBAR_05" title="리소스" roles="ROLE_SYSTEM,ROLE_ADMINISTRATOR,ROLE_DEVELOPER" >
 				<Item name="SIDEBAR_05_01" title="페이지" icon="hs-admin-html-5" location="resource-pages" roles="ROLE_SYSTEM,ROLE_ADMINISTRATOR,ROLE_DEVELOPER" />
-				<Item name="SIDEBAR_05_02" title="API" icon="hs-admin-files" location="resource-apis" roles="ROLE_SYSTEM,ROLE_ADMINISTRATOR,ROLE_DEVELOPER" /> 
-				<Item name="SIDEBAR_05_03" title="메뉴" icon="hs-admin-layout-menu-full" location="resource-menus" roles="ROLE_SYSTEM,ROLE_ADMINISTRATOR,ROLE_DEVELOPER" /> 
-				<Item name="SIDEBAR_05_04" title="파일" icon="hs-admin-files" location="resource-files" roles="ROLE_SYSTEM,ROLE_ADMINISTRATOR,ROLE_DEVELOPER" />
-				<Item name="SIDEBAR_05_05" title="이미지" icon="hs-admin-image" location="resource-images" roles="ROLE_SYSTEM,ROLE_ADMINISTRATOR,ROLE_DEVELOPER" />
-				<Item name="SIDEBAR_05_06" title="페이지 데코레이션" icon="hs-admin-html-5" location="resource-decorators" roles="ROLE_SYSTEM,ROLE_ADMINISTRATOR,ROLE_DEVELOPER" />
-				<!-- <Item name="SIDEBAR_05_07" title="템플릿(JSP)" icon="hs-admin-html-5" location="resource-templates-jsp" roles="ROLE_SYSTEM,ROLE_ADMINISTRATOR,ROLE_DEVELOPER" /> -->
-				<Item name="SIDEBAR_05_08" title="템플릿" icon="hs-admin-files" location="resource-templates" roles="ROLE_SYSTEM,ROLE_ADMINISTRATOR,ROLE_DEVELOPER" />
-				<Item name="SIDEBAR_05_09" title="스크립트" icon="hs-admin-files" location="resource-scripts" roles="ROLE_SYSTEM,ROLE_ADMINISTRATOR,ROLE_DEVELOPER" />
-				<Item name="SIDEBAR_05_10" title="SQL" icon="hs-admin-files" location="resource-sqls" roles="ROLE_SYSTEM,ROLE_ADMINISTRATOR,ROLE_DEVELOPER" />
+				<Item name="SIDEBAR_05_02" title="API" icon="hs-admin-files" location="resource-apis" roles="ROLE_SYSTEM,ROLE_ADMINISTRATOR,ROLE_DEVELOPER" />
+				<Item name="SIDEBAR_05_03" title="데코레이터" icon="hs-admin-layout" location="resource-decorators" roles="ROLE_SYSTEM,ROLE_ADMINISTRATOR,ROLE_DEVELOPER" />
+				<Item name="SIDEBAR_05_04" title="템플릿" icon="hs-admin-files" location="resource-templates" roles="ROLE_SYSTEM,ROLE_ADMINISTRATOR,ROLE_DEVELOPER" />
+				<Item name="SIDEBAR_05_05" title="스크립트" icon="hs-admin-files" location="resource-scripts" roles="ROLE_SYSTEM,ROLE_ADMINISTRATOR,ROLE_DEVELOPER" />
+				<Item name="SIDEBAR_05_06" title="SQL" icon="hs-admin-files" location="resource-sqls" roles="ROLE_SYSTEM,ROLE_ADMINISTRATOR,ROLE_DEVELOPER" />
+				<Item name="SIDEBAR_05_07" title="Web" icon="hs-admin-folder" >
+					<Item name="SIDEBAR_05_07_01" title="메뉴" icon="hs-admin-layout-menu-full" location="resource-menus" roles="ROLE_SYSTEM,ROLE_ADMINISTRATOR,ROLE_DEVELOPER" /> 
+					<Item name="SIDEBAR_05_07_02" title="파일" icon=hs-admin-files" location="resource-files" roles="ROLE_SYSTEM,ROLE_ADMINISTRATOR,ROLE_DEVELOPER" />
+					<Item name="SIDEBAR_05_07_03" title="이미지" icon="hs-admin-image" location="resource-images" roles="ROLE_SYSTEM,ROLE_ADMINISTRATOR,ROLE_DEVELOPER" />
+				</Item>
 			</Item>
-			<Item name="SIDEBAR_99" title="가이드" roles="ROLE_SYSTEM,ROLE_ADMINISTRATOR,ROLE_DEVELOPER" > 
-			
+			<Item name="SIDEBAR_99" title="가이드" roles="ROLE_SYSTEM,ROLE_ADMINISTRATOR,ROLE_DEVELOPER" >
 				<Item name="SIDEBAR_99_01" title="Working with Pages" icon="hs-admin-help" location="guide/pages"/>
 				<Item name="SIDEBAR_99_02" title="Working with APIs" icon="hs-admin-help" location="guide/apis"/>
-				<Item name="SIDEBAR_99_03" title="Working with Scripts" icon="hs-admin-help" location="guide/services/scripts"/>
+				<Item name="SIDEBAR_99_03" title="Working with Scripts" icon="hs-admin-help" location="guide/scripts"/>
 				<Item name="SIDEBAR_99_04" title="Working with Resources" icon="hs-admin-files" >
 					<Item name="SIDEBAR_99_04_01" title="Working with Menu" icon="hs-admin-help" location="guide/resources/menu"/> 
 					<Item name="SIDEBAR_99_04_02" title="Working with Attachment" icon="hs-admin-help" location="guide/resources/files"/> 

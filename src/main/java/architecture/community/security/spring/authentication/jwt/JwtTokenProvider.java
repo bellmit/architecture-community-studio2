@@ -28,11 +28,28 @@ public class JwtTokenProvider {
 	private static final Logger logger = LoggerFactory.getLogger(JwtTokenProvider.class);
 
     private static final String AUTHORITIES_KEY = "auth";
-
+    
+    /**
+     * JWT Token expire time.
+     */
     static final long EXPIRATIONTIME = 864_000_000; // 10 days
+    
+    /**
+     * Secret Key string
+     */
     static final String SECRET = "ThisIsASecret";
+    
+    /**
+     * JWT Token prefix
+     */
     static final String TOKEN_PREFIX = "Bearer";
+    
+    /**
+     * Header key for JWT Token
+     */
     static final String HEADER_STRING = "Authorization";
+    
+    
     
     public String createToken(Authentication authentication) { 
         String authorities = authentication.getAuthorities().stream().map(authority -> authority.getAuthority()).collect(Collectors.joining(",")); 

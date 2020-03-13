@@ -49,6 +49,7 @@ public class AuditLogEventListener {
 		
 		if(auditTrailsService!=null)
 			auditTrailsService.leave(e); 
+		
 		if(auditTrailService!=null)
 			auditTrailService.record(e.getContext());
 	}	

@@ -82,7 +82,6 @@ public final class CommunityContextHelper implements ApplicationContextAware {
 		return getComponent(ConfigService.class);
 	}
 
-	
 	public static CommunityAdminService getAdminService(){
 		return getComponent(CommunityAdminService.class);
 	}

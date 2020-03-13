@@ -78,8 +78,7 @@ public class DownloadDataController {
 		if (link.isPublicShared()) {
 			return true;
 		}
-		PermissionsBundle bundle = aclService.getPermissionBundle(SecurityHelper.getAuthentication(),
-				Models.IMAGE.getObjectClass(), image.getImageId());
+		PermissionsBundle bundle = aclService.getPermissionBundle(SecurityHelper.getAuthentication(), Models.IMAGE.getObjectClass(), image.getImageId());
 		if (bundle.isRead())
 			return true;
 		return false;
@@ -179,8 +178,8 @@ public class DownloadDataController {
 
 			log.debug("checking equals plain : {} , decoded : {} ",
 					org.apache.commons.lang3.StringUtils.equals(filename, image.getName()),
-					org.apache.commons.lang3.StringUtils.equals(ServletUtils.getEncodedFileName(filename),
-							image.getName()));
+					org.apache.commons.lang3.StringUtils.equals(ServletUtils.getEncodedFileName(filename), 
+					image.getName()));
 
 			if (image != null) {
 				if (!isAllowed(image))
@@ -201,6 +200,7 @@ public class DownloadDataController {
 				response.setContentType(contentType);
 				response.setContentLength(contentLength);
 				IOUtils.copy(input, response.getOutputStream());
+				
 				response.flushBuffer();
 			}
 

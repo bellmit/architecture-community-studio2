@@ -57,7 +57,7 @@ public class UserDataController {
 	@PostConstruct
 	public void initialize(){		
 		log.debug("creating cache ...");		
-		avatars = CacheBuilder.newBuilder().maximumSize(50).expireAfterAccess(1, TimeUnit.MINUTES).build(		
+		avatars = CacheBuilder.newBuilder().maximumSize(5000).expireAfterAccess(1, TimeUnit.MINUTES).build(		
 				new CacheLoader<String, AvatarImage>(){
  					public AvatarImage load(String username) throws Exception {
 						AvatarImage image = null;
@@ -77,15 +77,19 @@ public class UserDataController {
 
 	}	
 	
-	private boolean hasAvatarImage ( String username ) {
+	private boolean hasAvatarImageInCache ( String username ) {
 		if( !isSetUserAvatarService() )
-			return false; 
-		if( avatars != null)
-			try {
-				AvatarImage avatar = avatars.get(username);
-				return avatar.getAvatarImageId() > 0 ? true : false;
-			} catch (ExecutionException e) {
+			return false;  
+		if( avatars != null) {
+			AvatarImage avatar = avatars.getIfPresent(username);
+			if( avatar == null) {
+				try {
+					avatar = avatars.get(username); 
+				} catch (ExecutionException e) {
+				}
 			}
+			return avatar.getAvatarImageId() > 0 ? true : false;
+		}
 		return false;
 	}
 	
@@ -99,13 +103,14 @@ public class UserDataController {
 		    HttpServletResponse response) { 
 		try {
 			
-			if(hasAvatarImage( username ))
+			if(!hasAvatarImageInCache( username ))
 			{	
+				log.debug("not found avata for {}", username);
 				ResourceUtils.noAvatars(request, response);
-			}
-			
-			AvatarImage image = userAvatarService.getAvatareImageByUsername(username);  
-			if (image != null) {
+			} 
+			//AvatarImage image = userAvatarService.getAvatareImageByUsername(username);  
+			AvatarImage image = avatars.getIfPresent(username);
+			if (image != null && image.getAvatarImageId() > 0) {
 				InputStream input;
 				String contentType;
 				int contentLength;				

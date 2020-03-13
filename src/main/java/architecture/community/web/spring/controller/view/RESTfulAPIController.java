@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.handler.SimpleUrlHandlerMapping;
 import org.springframework.web.util.UrlPathHelper;
 
 import com.google.common.base.Stopwatch;
@@ -101,11 +102,14 @@ public class RESTfulAPIController {
 	    Model model) 
 	    throws NotFoundException, UnAuthorizedException , Exception {
 		
+		Stopwatch stopwatch = Stopwatch.createStarted(); 
 		log.debug("RESTful API : {}, {}", filename, version );
 		Api api = apiService.getApi(filename); 
 		
 		if( !api.isEnabled() )
 			throw new UnAuthorizedException("RESTful API is disabled."); 
+		
+		
 		// checking permissions.
 		if( api.getApiId() > 0 ) {
 			if( api.isSecured() ) {
@@ -117,6 +121,22 @@ public class RESTfulAPIController {
 		
 		Result result = Result.newResult();
 		model.addAttribute("__page", api );
+ 
+		if(StringUtils.isNotEmpty(api.getScriptSource())) {  
+			try { 
+				boolean usingCache = api.getBooleanProperty("cache", true); 
+				DataView _view = communityGroovyService.getService(api.getScriptSource(), DataView.class, usingCache); 
+				log.debug("set content type : {}", api.getContentType () );
+				if(StringUtils.isNotEmpty(api.getContentType()))
+					ServletUtils.setContentType(api.getContentType(), response);
+				return _view.handle(model.asMap(), request, response);
+			} catch (Exception e) {  
+				throw e;
+			} finally {
+				stopwatch.stop();
+				log.info("script:{}, time:{} ", filename, stopwatch);
+			}
+		}  
 		
 		if(communitySpringEventPublisher!=null)
 			communitySpringEventPublisher.fireEvent((new AuditLogEvent.Builder(request, response, this))
@@ -125,33 +145,16 @@ public class RESTfulAPIController {
 					.code(this.getClass().getName())
 					.resource(api.getName()).build()); 
 		
-		if(StringUtils.isNotEmpty(api.getScriptSource())) { 
-			Stopwatch stopwatch = Stopwatch.createStarted(); 
-			try { 
-				DataView _view = communityGroovyService.getService(api.getScriptSource(), DataView.class); 
-				log.debug("set content type : {}", api.getContentType () );
-				if(StringUtils.isNotEmpty(api.getContentType()))
-					ServletUtils.setContentType(api.getContentType(), response);
-				return _view.handle(model.asMap(), request, response);
-			} catch (Exception e) { 
-				//result.setError(e);
-				throw e;
-			} finally {
-				stopwatch.stop();
-				log.info("script:{}, time:{} ", filename, stopwatch);
-			}
-		} 
 		if(result.isSuccess()) {
 			result.setSuccess(false);
 		}
-		return result;
-	
+		return result; 
 	}	
 	
 	
 	/**
 	 * 
-	 * pattern 기반의 페이지 호출 처리 .
+	 * pattern 기반의 API 호출 처리 .
 	 * 
 	 */
 	@RequestMapping(value = "/*/**", method = { RequestMethod.POST, RequestMethod.GET })
@@ -163,8 +166,11 @@ public class RESTfulAPIController {
 	    Model model) 
 	    throws NotFoundException, UnAuthorizedException , Exception {	  
 		Result result = Result.newResult(); 
+
+		
 		UrlPathHelper pathHelper = new UrlPathHelper();
  		String path = pathHelper.getLookupPathForRequest(request);
+ 		
  		AntPathMatcher pathMatcher = new AntPathMatcher(); 
  		for( PathPattern pattern : apiService.getPathPatterns("/data/apis") )
  		{ 	
@@ -185,36 +191,32 @@ public class RESTfulAPIController {
  			}	
  			
  			log.debug("Path Pattern Checking (pattern:{}) : {}, match : {}, variables: {}", isPattern, pattern.getPattern(), match, variables);
+ 			
+ 			
  			if( match ) {  
  				StopWatch watch = new StopWatch();
+ 				Api pageToUse = null;
  				try {
  					watch.start();
-	 				Api page = apiService.getApiById( pattern.getObjectId() );
-	 				if( page.getApiId() > 0 ) {
-	 					if( page.isSecured() ) {
-	 						PermissionsBundle bundle = communityAclService.getPermissionBundle(SecurityHelper.getAuthentication(), Models.API.getObjectClass(), page.getApiId());
+	 				pageToUse = apiService.getApiById( pattern.getObjectId() );
+	 				if( pageToUse.getApiId() > 0 ) {
+	 					if( pageToUse.isSecured() ) {
+	 						PermissionsBundle bundle = communityAclService.getPermissionBundle(SecurityHelper.getAuthentication(), Models.API.getObjectClass(), pageToUse.getApiId());
 	 						if( !bundle.isRead() )
 	 							throw new UnAuthorizedException();
 	 					}
 	 					if( viewCountService!=null && !preview  )
-	 						viewCountService.addViewCount(Models.API.getObjectType(), page.getApiId() );	
+	 						viewCountService.addViewCount(Models.API.getObjectType(), pageToUse.getApiId() );	
 	 				}
-	 				model.addAttribute("__page", page); 
+	 				model.addAttribute("__page", pageToUse); 
 	 				model.addAttribute("__variables", variables);  
-	 				
-	 				if(communitySpringEventPublisher!=null)
-	 					communitySpringEventPublisher.fireEvent((new AuditLogEvent.Builder(request, response, this))
-	 							.objectTypeAndObjectId(Models.API.getObjectType(), page.getApiId())
-	 							.action(AuditLogEvent.READ)
-	 							.code(this.getClass().getName())
-	 							.resource(page.getName()).build()); 
-	 				
-
-	 				if(StringUtils.isNotEmpty(page.getScriptSource())) {
-	 					DataView _view = communityGroovyService.getService(page.getScriptSource(), DataView.class);
+	 				if(StringUtils.isNotEmpty(pageToUse.getScriptSource())) {
+	 					
+	 					boolean usingCache = pageToUse.getBooleanProperty("cache", true); 
+	 					DataView _view = communityGroovyService.getService(pageToUse.getScriptSource(), DataView.class, usingCache);
 	 					try {
-	 						if(StringUtils.isNotEmpty(page.getContentType()))
-	 							ServletUtils.setContentType(page.getContentType(), response);
+	 						if(StringUtils.isNotEmpty(pageToUse.getContentType()))
+	 							ServletUtils.setContentType(pageToUse.getContentType(), response);
 	 						return _view.handle(model.asMap(), request, response);
 						} catch (Exception e) { 
 							log.error("Error process data ..", e);
@@ -225,6 +227,12 @@ public class RESTfulAPIController {
  				}finally {
  					watch.stop();
  					log.debug("DATA API CALLED : {}" , watch.prettyPrint());
+	 				if(communitySpringEventPublisher!=null && pageToUse!=null)
+	 					communitySpringEventPublisher.fireEvent((new AuditLogEvent.Builder(request, response, this))
+	 							.objectTypeAndObjectId(Models.API.getObjectType(), pageToUse.getApiId())
+	 							.action(AuditLogEvent.READ)
+	 							.code(this.getClass().getName())
+	 							.resource(pageToUse.getName()).build()); 
  				}
  				break;
  			}

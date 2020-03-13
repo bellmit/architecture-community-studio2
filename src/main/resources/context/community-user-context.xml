@@ -16,11 +16,6 @@
        http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
        http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
 
-
-	<beans:bean id="communityEventPublisher" class="architecture.community.services.CommunitySpringEventPublisher" />
-	
-	<beans:bean id="propertyDao" class="architecture.ee.jdbc.property.dao.impl.JdbcPropertyDao" p:dataSource-ref="dataSource" />
-	
 	
 	<!--  CACHE  -->    
 	<beans:bean id="userIdCache" class="org.springframework.cache.ehcache.EhCacheFactoryBean" 

@@ -1,7 +1,9 @@
 package architecture.community.web.spring.controller.data;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 import javax.inject.Inject;
 import javax.servlet.ServletContext;
@@ -22,11 +24,16 @@ import architecture.community.attachment.Attachment;
 import architecture.community.attachment.AttachmentService;
 import architecture.community.attachment.DefaultAttachment;
 import architecture.community.exception.NotFoundException;
+import architecture.community.image.DefaultImage;
+import architecture.community.image.Image;
+import architecture.community.image.ImageLink;
+import architecture.community.image.ImageService;
 import architecture.community.model.Models;
 import architecture.community.model.json.JsonDateDeserializer;
 import architecture.community.model.json.JsonDateSerializer;
 import architecture.community.share.SharedLink;
 import architecture.community.share.SharedLinkService;
+import architecture.community.tag.TagService;
 import architecture.community.util.CommunityConstants;
 import architecture.community.web.spring.controller.data.secure.mgmt.ResourceType;
 import architecture.ee.service.ConfigService;
@@ -54,6 +61,13 @@ public abstract class AbstractResourcesDataController {
 	@Qualifier("sharedLinkService")
 	private SharedLinkService sharedLinkService;	
 	
+	@Autowired
+	@Qualifier("imageService") 
+	private ImageService imageService;
+	
+	@Autowired( required = false) 
+	@Qualifier("tagService")
+	private TagService tagService;
 	
 	protected ResourceLoader getResourceLoader() {
 		if (loader == null)
@@ -70,6 +84,53 @@ public abstract class AbstractResourcesDataController {
 		}
 	}
 	
+	protected List<Attachment> getAttachments (List<Long> attachmentIDs, boolean includeLink, boolean includeTags ){ 
+		List<Attachment> attachments = new ArrayList<Attachment>();		
+		for( Long id : attachmentIDs ) {
+			try {
+				Attachment attachment = attachmentService.getAttachment(id); 
+				if( includeLink && sharedLinkService != null) {
+					try {
+						SharedLink link = sharedLinkService.getSharedLink(Models.ATTACHMENT.getObjectType(), attachment.getAttachmentId());
+						((DefaultAttachment) attachment ).setSharedLink(link);
+					} catch (Exception ignore) {}	
+				}
+				
+				if( includeTags && tagService!= null ) {
+					String tags = tagService.getTagsAsString(Models.ATTACHMENT.getObjectType(), attachment.getAttachmentId());
+					((DefaultAttachment)attachment).setTags( tags );
+				} 
+				attachments.add(attachment); 
+			} catch (NotFoundException e) {
+			}
+		}
+		return attachments;
+	}
+	
+	protected List<Image> getImages (List<Long> imageIDs, boolean includeImageLink, boolean includeTags ){
+		List<Image> images = new ArrayList<Image>(imageIDs.size());
+		for( Long id : imageIDs ) {
+			try {
+				Image image = imageService.getImage(id);
+				if( includeImageLink ) {
+					try {
+						ImageLink link = imageService.getImageLink(image);
+						((DefaultImage)image).setImageLink( link );
+					} catch (Exception ignore) {
+						
+					}
+				}
+				if( includeTags && tagService!= null ) {
+					String tags = tagService.getTagsAsString(Models.IMAGE.getObjectType(), image.getImageId());
+					((DefaultImage)image).setTags( tags );
+				}
+				images.add(image);
+				
+			} catch (NotFoundException e) {
+			}
+		}
+		return images;
+	}
 	
 	protected Attachment getAttachmentById(Long attachmentId)
 			throws NotFoundException { 

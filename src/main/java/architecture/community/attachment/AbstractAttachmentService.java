@@ -30,6 +30,8 @@ public abstract class AbstractAttachmentService {
 	
 	protected ReentrantLock lock = new ReentrantLock();
 	
+	protected static final String IMAGE_PNG_FORMAT = "png";
+	
 	public AbstractAttachmentService() {
 	}
 

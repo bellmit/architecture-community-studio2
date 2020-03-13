@@ -23,6 +23,7 @@ import architecture.community.model.Models;
 import architecture.community.page.Page;
 import architecture.community.page.PageNotFoundException;
 import architecture.community.page.PageService;
+import architecture.community.page.PageState;
 import architecture.community.services.CommunityGroovyService;
 import architecture.community.services.CommunitySpringEventPublisher;
 import architecture.community.util.SecurityHelper;
@@ -111,7 +112,8 @@ public class AccountsPageController {
 			if(StringUtils.isNotEmpty(page.getScript())) {
 				log.debug("page script view : {}", page.getScript() );
 				try {
-					View _view = communityGroovyService.getService(page.getScript(), View.class);
+					boolean useCache = page.getPageState() == PageState.PUBLISHED ? true : false ;
+					View _view = communityGroovyService.getService(page.getScript(), View.class, useCache);
 					_view.render((Map) model, request, response); 
 				} catch (Exception e) { 
 					log.error("Error in render.", e);

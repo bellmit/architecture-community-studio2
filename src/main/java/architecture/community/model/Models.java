@@ -10,6 +10,9 @@ import architecture.community.navigator.menu.Menu;
 import architecture.community.navigator.menu.MenuItem;
 import architecture.community.page.Page;
 import architecture.community.page.api.Api;
+import architecture.community.streams.Streams;
+import architecture.community.streams.StreamMessage;
+import architecture.community.streams.StreamThread;
 import architecture.community.tag.ContentTag;
 import architecture.community.user.AvatarImage;
 import architecture.community.user.Company;
@@ -17,6 +20,7 @@ import architecture.community.user.Role;
 import architecture.community.user.User;
 
 public enum Models { 
+	
 	UNKNOWN(-1, null), 
 	USER(1, User.class), 
 	COMPANY(3, Company.class),  
@@ -31,6 +35,9 @@ public enum Models {
 	MENU(15, Menu.class),  
 	MENU_ITEM(16, MenuItem.class),  
 	TAG(18, ContentTag.class),  
+	STREAMS(20, Streams.class),
+	STREAMS_THREAD(21, StreamThread.class),
+	STREAMS_MESSAGE(22, StreamMessage.class),
 	API(30, Api.class),
 	ANNOUNCE(41, Announce.class)
 	;

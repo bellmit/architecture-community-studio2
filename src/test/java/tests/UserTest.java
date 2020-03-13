@@ -23,6 +23,7 @@ import architecture.ee.service.ConfigService;
 @WebAppConfiguration("WebContent/")
 @ContextConfiguration(locations = { "classpath:application-community-context.xml",
 		"classpath:context/community-core-context.xml", "classpath:context/community-ehcache-context.xml",
+		"classpath:context/community-utils-context.xml",
 		"classpath:context/community-user-context.xml" })
 public class UserTest {
 

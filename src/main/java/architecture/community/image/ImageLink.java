@@ -12,6 +12,11 @@ public class ImageLink implements Serializable {
 
 	private boolean publicShared = false;
 
+	public ImageLink() {
+		super();
+	}
+
+
 	/**
 	 * @param linkId
 	 * @param imageId

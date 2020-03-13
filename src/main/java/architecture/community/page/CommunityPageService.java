@@ -70,7 +70,8 @@ public class CommunityPageService extends EventSupport implements PageService {
 					public List<PathPattern>  load(String prefix) throws Exception {
 						List<PathPattern> matchers =  new ArrayList<PathPattern>();
 						for( Page p : pageDao.getAllPageHasPatterns()) {
-							matchers.add(new PathPattern(p.getPageId(), prefix + p.getPattern()));
+							if( StringUtils.isNotBlank(p.getPattern()) )
+								matchers.add(new PathPattern(p.getPageId(), prefix + p.getPattern()));
 						} 
 						return matchers;
 				}}

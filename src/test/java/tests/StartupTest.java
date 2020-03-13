@@ -21,6 +21,7 @@ import architecture.ee.service.Repository;
 		"classpath:application-community-context.xml",
 		"classpath:context/community-user-context.xml",
 		"classpath:context/community-ehcache-context.xml",
+		"classpath:context/community-utils-context.xml",
 		"classpath:context/community-core-context.xml"})
 
 public class StartupTest {
