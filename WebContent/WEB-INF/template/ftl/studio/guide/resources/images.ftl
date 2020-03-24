@@ -373,7 +373,7 @@
 					<div class="u-heading-v5-2 g-mb-20">
 					  <h2 class="text-uppercase h5 u-heading-v5__title" id="guide-5" >이미지 삭제</h2>
 					</div>
-					<p>삭제는 생성자 또는 권한(ROLE_SYSTEM, ROLE_DEVELOPER, ROLE_OPERATOR, ROLE_ADMINISTRATOR )이 있는 경우에 만 사용할 수 있다.</p>		
+					<p>삭제는 생성자 또는 권한(ROLE_SYSTEM, ROLE_DEVELOPER, ROLE_OPERATOR, ROLE_ADMINISTRATOR )이 있는 경우에 만 사용할 수 있다. 삭제된 이미지는 복구 할 수 없다.</p>		
 					<pre><code class="language-java g-font-size-12">GET/POST /data/images/{imageId}/delete.json</code></pre>		
 				</main>
 			</div>
