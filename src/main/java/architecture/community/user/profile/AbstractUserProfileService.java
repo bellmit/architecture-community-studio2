@@ -87,7 +87,6 @@ public abstract class AbstractUserProfileService implements UserProfileService ,
 			} else {
 				profile = loadUserProfile (user.getUserId()); 
 			}
-			setProfileWithUser(profile, user);
 			return profile;
 		} catch (Exception e) {
 			String msg = (new StringBuilder()).append("Unable to find profile object by ").append(user.getUserId()).toString(); 
@@ -95,17 +94,6 @@ public abstract class AbstractUserProfileService implements UserProfileService ,
 		}
 	} 
 	
-	private void setProfileWithUser( UserProfile profile , User user ) {
-		if( profile != null && user != null && profile instanceof CustomUserProfile) {
-			CustomUserProfile profileToUse = (CustomUserProfile) profile;
-			if( StringUtils.isEmpty( profile.getName() ) && !StringUtils.isEmpty(user.getName()) )
-				profileToUse.setName( user.getName() );
-			if( StringUtils.isEmpty( profile.getUsername() ) && !StringUtils.isEmpty(user.getUsername()) )
-				profileToUse.setUsername( user.getUsername() );
-			if( StringUtils.isEmpty( profile.getEmail() ) && !StringUtils.isEmpty(user.getEmail()) )
-				profileToUse.setEmail( user.getEmail() );	
-		}
-	}
 	 
 	public void saveOrUpdate(User user, UserProfile profile) {  
 		saveOrUpdate(profile);

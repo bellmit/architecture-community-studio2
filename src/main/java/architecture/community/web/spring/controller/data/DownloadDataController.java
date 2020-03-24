@@ -259,7 +259,6 @@ public class DownloadDataController {
 						log.debug("add view count attachment '{}'", attachment.getAttachmentId());
 						viewCountService.addViewCount(Models.ATTACHMENT.getObjectType(), attachment.getAttachmentId());
 					}
-
 					contentType = attachment.getContentType();
 					contentLength = attachment.getSize();
 					response.setContentType(contentType);

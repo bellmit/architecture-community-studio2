@@ -45,6 +45,10 @@ public interface User extends PropertyAware {
 	public String getUsername();
 
 	public String getName();
+	
+	public String getFirstName();
+	
+	public String getLastName();
 
 	public boolean isEnabled();
 	

@@ -87,4 +87,16 @@ public class SystemUser extends org.springframework.security.core.userdetails.Us
 		return false;
 	}
 
+	@Override
+	public String getFirstName() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public String getLastName() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 }

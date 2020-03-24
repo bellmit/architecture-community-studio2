@@ -14,6 +14,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
@@ -66,13 +68,26 @@ public class JwtTokenProvider {
         		.compact();
     }
 
-    public Authentication getAuthentication(String token) { 
+    public Authentication getAuthentication(String token, UserDetailsService userDetailsService, boolean refresh) { 
         Claims claims = Jwts.parser().setSigningKey(SECRET).parseClaimsJws(token).getBody(); 
         Collection<? extends GrantedAuthority> authorities = Arrays.asList(claims.get(AUTHORITIES_KEY).toString().split(",")).stream()
                     .map(authority -> new SimpleGrantedAuthority(authority))
                     .collect(Collectors.toList()); 
+        UserDetails details = userDetailsService.loadUserByUsername(claims.getSubject()); 
+        return new UsernamePasswordAuthenticationToken( details, "", refresh ? details.getAuthorities() : authorities );
+    }
+    
+    public Authentication getAuthentication(String token) { 
+    	
+        Claims claims = Jwts.parser().setSigningKey(SECRET).parseClaimsJws(token).getBody(); 
+        Collection<? extends GrantedAuthority> authorities = Arrays.asList(claims.get(AUTHORITIES_KEY).toString().split(",")).stream()
+                    .map(authority -> new SimpleGrantedAuthority(authority))
+                    .collect(Collectors.toList()); 
+        
         User principal = new User(claims.getSubject(), "", authorities); 
+        
         return new UsernamePasswordAuthenticationToken(principal, "", authorities);
+        
     }
 
     public boolean validateToken(String authToken) { 

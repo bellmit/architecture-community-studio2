@@ -311,6 +311,7 @@ public class CommunityAttachmentService extends AbstractAttachmentService implem
 	}
 	
 	protected File getAttachmentFromCacheIfExist(Attachment attachment) throws IOException{		
+		
 		File dir = getAttachmentCacheDir();
 		
 		StringBuilder sb = new StringBuilder();
@@ -381,6 +382,7 @@ public class CommunityAttachmentService extends AbstractAttachmentService implem
 			thumbnail.setSize(thumbnailFile.length());
 			return thumbnailFile;
 		} 
+		
 		lock.lock(); 
 		try {
 			
@@ -418,6 +420,7 @@ public class CommunityAttachmentService extends AbstractAttachmentService implem
 				slide.get(0).draw(graphics);  
 				ImageIO.write(Thumbnails.of(img).size(thumbnail.getWidth(), thumbnail.getHeight()).asBufferedImage(), "png", thumbnailFile); 
 				log.debug("done." );
+				return thumbnailFile;
 			} else if (StringUtils.endsWithIgnoreCase(attachment.getContentType(), "mp3")) {
 				// MP3
 				log.debug("extracting thumbnail from mp3");

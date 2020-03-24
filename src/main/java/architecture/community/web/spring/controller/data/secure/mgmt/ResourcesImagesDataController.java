@@ -173,6 +173,7 @@ public class ResourcesImagesDataController {
 		private int objectType = 0 ;
 		private URL imageUrl;
 		private long objectId = 0;
+		private boolean share = false;
 
 		@JsonIgnore
 		private String contentType;
@@ -193,6 +194,14 @@ public class ResourcesImagesDataController {
 			this.objectType = objectType;
 		}
 	
+		public boolean isShare() {
+			return share;
+		}
+
+		public void setShare(boolean share) {
+			this.share = share;
+		}
+
 		/**
 		 * @return imageUrl
 		 */

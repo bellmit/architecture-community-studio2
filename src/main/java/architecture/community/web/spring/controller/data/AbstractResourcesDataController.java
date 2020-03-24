@@ -1,15 +1,23 @@
 package architecture.community.web.spring.controller.data;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.UUID;
 
 import javax.inject.Inject;
 import javax.servlet.ServletContext;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.tika.Tika;
+import org.jcodec.common.logging.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.io.Resource;
@@ -74,7 +82,40 @@ public abstract class AbstractResourcesDataController {
 			loader = new ServletContextResourceLoader(servletContext);
 		return loader;
 	}
-
+	
+    public String detectContentType(File file) {
+    	String contentType = null;
+	    if (contentType == null) {
+			Tika tika = new Tika();
+			try {
+			    contentType = tika.detect(file);
+			} catch (IOException e) {
+			    contentType = null;
+			}
+	    }
+	    return contentType;
+	}
+    
+	protected File readFileFromUrl(URL url) throws Exception {
+		// This will get input data from the server
+		InputStream inputStream = null;
+		try {
+			// This user agent is for if the server wants real humans to visit
+			String USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36";
+			// This socket type will allow to set user_agent
+			URLConnection con = url.openConnection();
+			// Setting the user agent
+			con.setRequestProperty("User-Agent", USER_AGENT);
+			// Requesting input data from server
+			inputStream = con.getInputStream();
+			File temp = File.createTempFile(UUID.randomUUID().toString(), ".tmp");
+			FileUtils.copyToFile( inputStream, temp );
+			return temp;
+		}finally {
+			IOUtils.closeQuietly(inputStream);
+		}
+	} 
+	
 	protected void deleteAttachment(Attachment attachment) throws NotFoundException {  
 		attachmentService.removeAttachment(attachment);
 		try {
@@ -117,7 +158,7 @@ public abstract class AbstractResourcesDataController {
 						ImageLink link = imageService.getImageLink(image);
 						((DefaultImage)image).setImageLink( link );
 					} catch (Exception ignore) {
-						
+						Logger.warn("image link not found", ignore);
 					}
 				}
 				if( includeTags && tagService!= null ) {

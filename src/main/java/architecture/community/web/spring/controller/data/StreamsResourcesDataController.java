@@ -1,7 +1,9 @@
 package architecture.community.web.spring.controller.data;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -19,6 +21,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.annotation.Secured;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -50,6 +53,7 @@ import architecture.community.user.User;
 import architecture.community.util.SecurityHelper;
 import architecture.community.web.model.DataSourceRequest;
 import architecture.community.web.model.ItemList;
+import architecture.community.web.spring.controller.data.secure.mgmt.ResourcesImagesDataController.UrlImageUploader;
 import architecture.ee.util.StringUtils;
 
 @Controller("community-resources-filepond-data-controller")
@@ -90,7 +94,13 @@ public class StreamsResourcesDataController extends AbstractResourcesDataControl
 	public ItemList getImages(
 		@RequestBody DataSourceRequest dataSourceRequest, 
 		@RequestParam(value = "fields", defaultValue = "none", required = false) String fields,
+		Authentication authentication,
 		NativeWebRequest request) { 
+		
+		User user = SecurityHelper.getUser();
+		Principal principal = request.getUserPrincipal();
+		
+		log.debug("user from security : {}, principal : {} , authentication : {}", user , principal != null ? principal.getName() : "anonymous", authentication);
 		
 		boolean includeImageLink = org.apache.commons.lang3.StringUtils.contains(fields, "link");  
 		boolean includeTags = org.apache.commons.lang3.StringUtils.contains(fields, "tags");  
@@ -108,6 +118,40 @@ public class StreamsResourcesDataController extends AbstractResourcesDataControl
 		return new ItemList(images, totalCount );
 	}
 	
+	/**
+     * URL 로 이미지를 업로드 한다.
+     * 
+     * @param uploader
+     * @param request
+     * @return
+     * @throws NotFoundException
+     * @throws IOException
+     */
+	
+    @RequestMapping(value = "/data/streams/me/images/0/upload_by_url.json", method = RequestMethod.POST)
+    @ResponseBody
+    public Image uploadImageByUrl(@RequestBody UrlImageUploader upload, NativeWebRequest request)
+	    throws NotFoundException, Exception {
+		User user = SecurityHelper.getUser();
+		log.debug("downloading {}", upload.getFileName() );
+		
+		Streams streams = Utils.getStreamsByNameCreateIfNotExist(streamsService , Utils.ME_STREAM_NAME); 
+		
+		File file = readFileFromUrl(upload.getImageUrl());
+		String contentType = detectContentType(file);
+		Image imageToUse = imageService.createImage( Models.STREAMS.getObjectType(), streams.getStreamId(), upload.getFileName(), contentType, file );
+		imageToUse.setUser(user);
+		imageToUse.getProperties().put("url", upload.getImageUrl().getPath());
+		Image uploadedImage = imageService.saveImage(imageToUse); 
+		if( upload.isShare() ) {
+		    ImageLink link = imageService.getImageLink(uploadedImage, true);
+		    link.setFilename(uploadedImage.getName());
+		    ((DefaultImage)uploadedImage).setImageLink(link);
+		}
+		return uploadedImage ; 
+    }
+	
+	
 	@RequestMapping(value = "/data/streams/me/files/list.json", method = { RequestMethod.POST, RequestMethod.GET })
 	@ResponseBody
 	public ResponseEntity<ItemList> getAttachments(
@@ -115,7 +159,11 @@ public class StreamsResourcesDataController extends AbstractResourcesDataControl
 		@RequestParam(value = "fields", defaultValue = "none", required = false) String fields,
 		NativeWebRequest request) throws UnAuthorizedException { 
 		
+		
 		User user = SecurityHelper.getUser();
+		Principal principal = request.getUserPrincipal();
+		log.debug("user from security : {}, principal : {} ", user , principal != null ? principal.getName() : "anonymous");
+		
 		boolean includeLink = org.apache.commons.lang3.StringUtils.contains(fields, "link");
 		boolean includeTags = org.apache.commons.lang3.StringUtils.contains(fields, "tags");  
 		
@@ -140,6 +188,9 @@ public class StreamsResourcesDataController extends AbstractResourcesDataControl
     	    MultipartHttpServletRequest request ) throws NotFoundException, IOException, UnAuthorizedException {
 		
 		User user = SecurityHelper.getUser();
+		Principal principal = request.getUserPrincipal();
+		log.debug("user from security : {}, principal : {} ", user , principal != null ? principal.getName() : "anonymous");
+		
 		if(user.isAnonymous())
 			throw new UnAuthorizedException("No Authorized. Please signin first."); 
 		
@@ -197,7 +248,11 @@ public class StreamsResourcesDataController extends AbstractResourcesDataControl
 	    });
 		
 		log.debug( "request parameters : {}" , request.getParameterMap() ); 
+		
 		User user = SecurityHelper.getUser();
+		Principal principal = request.getUserPrincipal();
+		log.debug("user from security : {}, principal : {} ", user , principal != null ? principal.getName() : "anonymous");
+		
 		if(user.isAnonymous())
 			throw new UnAuthorizedException("No Authorized. Please signin first.");
 		
@@ -233,13 +288,17 @@ public class StreamsResourcesDataController extends AbstractResourcesDataControl
 	
 	@RequestMapping(value = "/data/streams/me/photos/filepond", method = RequestMethod.DELETE)
 	@ResponseBody
-    public ResponseEntity<String> deleteImage ( @RequestHeader Map<String, String> headers, @RequestBody String body) throws NotFoundException, IOException, UnAuthorizedException {  
+    public ResponseEntity<String> deleteImage ( @RequestHeader Map<String, String> headers, @RequestBody String body, NativeWebRequest request) throws NotFoundException, IOException, UnAuthorizedException {  
 		headers.forEach((key, value) -> {
 	        log.info(String.format("Header '%s' = %s", key, value));
 	    });
 		log.debug("request {}", body);
 		Long imageId = NumberUtils.toLong(StringUtils.defaultString(body, "0"), -1L);
+		
 		User user = SecurityHelper.getUser();
+		Principal principal = request.getUserPrincipal();
+		log.debug("user from security : {}, principal : {} ", user , principal != null ? principal.getName() : "anonymous");
+		
 		if(user.isAnonymous())
 			throw new UnAuthorizedException("No Authorized. Please signin first."); 
 		if( imageId > 0 ) { 

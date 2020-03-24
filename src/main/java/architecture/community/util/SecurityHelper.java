@@ -52,6 +52,19 @@ public class SecurityHelper {
 		}
 		return ANONYMOUS_USER_DETAILS ;
 	}
+
+	public static User getUser(Authentication authentication) {
+		try {
+		    Object obj = authentication.getPrincipal();
+		    if (obj instanceof CommuintyUserDetails)
+		    	return ((CommuintyUserDetails) obj).getUser();
+		    else if (obj instanceof SystemUser)
+		    	return (SystemUser)obj;
+		} catch (Exception ignore) {
+			
+		}
+		return ANONYMOUS;
+	}
 	
 	public static User getUser() {
 		try {

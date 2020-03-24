@@ -173,7 +173,6 @@ public class CommunityImageService extends AbstractAttachmentService implements 
 		this.logoImageIdsCache.remove(getLogoImageIdListCacheKey(logoImage.getObjectType(), logoImage.getObjectId()));
 		if (file != null)
 			deleteImageFileCache(logoImage);
-
 		Date now = Calendar.getInstance().getTime();
 		logoImage.setModifiedDate(now);
 		imageDao.updateLogoImage(logoImage, file);

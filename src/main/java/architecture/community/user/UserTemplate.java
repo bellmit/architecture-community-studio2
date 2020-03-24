@@ -83,7 +83,7 @@ public class UserTemplate extends PropertyAwareSupport implements User, Serializ
 		this.status = user.getStatus();
 		this.password = user.getPassword();
 		this.passwordHash = user.getPasswordHash();
-		this.enabled = true;
+		this.enabled = user.isEnabled();
 		this.status = Status.NONE;
 		
 		if( user.getStatus() != Status.NONE)
