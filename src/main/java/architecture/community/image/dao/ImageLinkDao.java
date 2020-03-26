@@ -15,4 +15,6 @@ public interface ImageLinkDao {
 	
 	public void removeImageLink(Image image);
 	
+	public void update( ImageLink link );
+	
 }

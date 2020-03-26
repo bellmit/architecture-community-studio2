@@ -15,6 +15,7 @@ import architecture.community.streams.StreamsNotFoundException;
 import architecture.community.streams.StreamsService;
 import architecture.community.user.User;
 import architecture.community.util.SecurityHelper;
+import architecture.ee.util.StringUtils;
 
 public class Utils {
 
@@ -58,14 +59,31 @@ public class Utils {
 		return streams;
 	}
 	
-	public static boolean isAllowed(User owner, User me) {
+	
+	public static final String ALLOWED_EVERYTHING_ROLES = "ROLE_ADMINISTRATOR,ROLE_SYSTEM,ROLE_DEVELOPER";
+	
+	/**
+	 * Check permissions ..
+	 * @param owner
+	 * @param me
+	 * @param roles
+	 * @return
+	 */
+	public static boolean isAllowed(User owner, User me, String roles) {
 		boolean isAllowed = false;
-		if( SecurityHelper.isUserInRole("ROLE_ADMINISTRATOR,ROLE_SYSTEM,ROLE_DEVELOPER,ROLE_OPERATOR"))
-			return true;
-		if( owner.getUserId() > 0 && me.getUserId() > 0 &&  owner.getUserId() == me.getUserId() ) {
+		if( !StringUtils.isNullOrEmpty(roles)) {
+			if( SecurityHelper.isUserInRole(roles))
+				isAllowed = true;
+		}
+		if( !isAllowed &&  owner.getUserId() > 0 && me.getUserId() > 0 &&  owner.getUserId() == me.getUserId() ) {
 			isAllowed = true;
 		}
-		return true;
+		return isAllowed ;
+	}
+	
+	public static boolean isAllowed(User owner, User me) {
+		return isAllowed(owner, me, "ROLE_ADMINISTRATOR,ROLE_SYSTEM,ROLE_DEVELOPER,ROLE_OPERATOR");
+		
 	}
 	
 }

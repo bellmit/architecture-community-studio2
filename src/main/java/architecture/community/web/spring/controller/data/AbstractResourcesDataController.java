@@ -17,7 +17,6 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.tika.Tika;
-import org.jcodec.common.logging.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.io.Resource;
@@ -96,6 +95,15 @@ public abstract class AbstractResourcesDataController {
 	    return contentType;
 	}
     
+    
+    protected void setImageLink(Image image, boolean createIfNotExist) {
+		try {
+			ImageLink link = imageService.getImageLink(image, createIfNotExist);
+			((DefaultImage)image).setImageLink( link );
+		} catch (Exception ignore) { 
+		}
+    }
+    
 	protected File readFileFromUrl(URL url) throws Exception {
 		// This will get input data from the server
 		InputStream inputStream = null;
@@ -154,12 +162,7 @@ public abstract class AbstractResourcesDataController {
 			try {
 				Image image = imageService.getImage(id);
 				if( includeImageLink ) {
-					try {
-						ImageLink link = imageService.getImageLink(image);
-						((DefaultImage)image).setImageLink( link );
-					} catch (Exception ignore) {
-						Logger.warn("image link not found", ignore);
-					}
+					setImageLink(image, false);
 				}
 				if( includeTags && tagService!= null ) {
 					String tags = tagService.getTagsAsString(Models.IMAGE.getObjectType(), image.getImageId());

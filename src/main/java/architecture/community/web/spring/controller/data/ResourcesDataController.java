@@ -80,8 +80,6 @@ public class ResourcesDataController extends AbstractResourcesDataController {
 		NativeWebRequest request) throws UnAuthorizedException { 
 		
 		User user = SecurityHelper.getUser();
-		//if(user.isAnonymous())
-		//	throw new UnAuthorizedException("No Authorized. Please signin first.");
 		
 		boolean includeLink = org.apache.commons.lang3.StringUtils.contains(fields, "link");
 		boolean includeTags = org.apache.commons.lang3.StringUtils.contains(fields, "tags");  
@@ -239,19 +237,79 @@ public class ResourcesDataController extends AbstractResourcesDataController {
 		    image.setUser(user);		    
 		    imageService.saveImage(image); 
 		    if( shared ) {
-				try {
-					imageService.getImageLink(image, true);
-					ImageLink link = imageService.getImageLink(image);
-					((DefaultImage)image).setImageLink( link );
-				} catch (Exception ignore) { 
-				} 
+		    	setImageLink(image, false);
 		    }
 			images.add(image);
 		}
-		
 		return new ItemList(images, images.size() ); 
     }
-	 
+	
+	@RequestMapping(value = "/data/images/{imageId:[\\p{Digit}]+}/update.json", method = { RequestMethod.POST })
+	@ResponseBody
+    public Image updateImage ( 
+    		@PathVariable Long imageId,
+    		MultipartHttpServletRequest request) throws NotFoundException, IOException, UnAuthorizedException { 
+		
+		User user = SecurityHelper.getUser();
+		if(user.isAnonymous())
+			throw new UnAuthorizedException("No Authorized. Please signin first.");
+		Image imageToUse = imageService.getImage(imageId); 
+		Iterator<String> names = request.getFileNames();		
+		while (names.hasNext()) {
+		    String fileName = names.next();
+		    MultipartFile mpf = request.getFile(fileName);
+		    InputStream is = mpf.getInputStream();
+		    log.debug("upload file:{}, size:{}, type:{} ", mpf.getOriginalFilename(), mpf.getSize() , mpf.getContentType() ); 
+		    
+		    ((DefaultImage)imageToUse).setContentType(mpf.getContentType());
+		    ((DefaultImage)imageToUse).setInputStream(is);
+		    imageToUse.setSize((int) mpf.getSize());
+		    ((DefaultImage)imageToUse).setName(mpf.getOriginalFilename());
+		    imageToUse.setUser(user);		    
+		    imageService.saveImage(imageToUse); 
+		    break;
+		}
+		return imageToUse;
+    }
+	
+	@RequestMapping(value = "/data/images/{imageId:[\\p{Digit}]+}/share.json", method = { RequestMethod.POST })
+	@ResponseBody
+    public Image shareImage ( 
+    		@PathVariable Long imageId,
+    		NativeWebRequest request) throws NotFoundException, IOException, UnAuthorizedException { 
+		
+		User user = SecurityHelper.getUser();
+		if(user.isAnonymous())
+			throw new UnAuthorizedException("No Authorized. Please signin first.");
+		
+		Image imageToUse = imageService.getImage(imageId);
+		setImageLink(imageToUse, true);
+		return imageToUse ;
+    }
+	
+	@RequestMapping(value = "/data/images/{imageId:[\\p{Digit}]+}/unshare.json", method = { RequestMethod.POST })
+	@ResponseBody
+    public Image unshareImage ( 
+    		@PathVariable Long imageId,
+    		NativeWebRequest request) throws NotFoundException, IOException, UnAuthorizedException { 
+		
+		User user = SecurityHelper.getUser();
+		if(user.isAnonymous())
+			throw new UnAuthorizedException("No Authorized. Please signin first.");
+		
+		Image imageToUse = imageService.getImage(imageId);
+		setImageLink(imageToUse, false);
+		
+		ImageLink link = imageToUse.getImageLink();
+		if( link != null ) {
+			ImageLink newLink = new ImageLink(link.getLinkId(), link.getImageId(), false);
+			imageService.saveOrUpdate(newLink);
+			((DefaultImage)imageToUse).setImageLink(newLink);
+		} 
+		return imageToUse ;
+    }
+	
+	
 	@RequestMapping(value = "/data/images/{imageId:[\\p{Digit}]+}/get.json", method = { RequestMethod.POST, RequestMethod.GET })
 	@ResponseBody
 	public Image getImage (
@@ -260,14 +318,20 @@ public class ResourcesDataController extends AbstractResourcesDataController {
 		NativeWebRequest request) throws NotFoundException { 
 		
 		Image image = 	imageService.getImage(imageId);
-		try {
-			ImageLink link = imageService.getImageLink(image);
-			((DefaultImage)image).setImageLink( link );
-		} catch (Exception ignore) { 
-		}
+		setImageLink(image, false);
 		return image;
 	}	 
-	 
+	
+	/**
+	 * 
+	 * @param imageId
+	 * @param dataSourceRequest
+	 * @param request
+	 * @return
+	 * @throws NotFoundException
+	 * @throws UnAuthorizedException
+	 */
+	
 	@RequestMapping(value = "/data/images/{imageId:[\\p{Digit}]+}/delete.json", method = { RequestMethod.POST, RequestMethod.GET })
 	@ResponseBody
 	public Result removeImage (

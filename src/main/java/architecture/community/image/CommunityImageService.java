@@ -735,6 +735,19 @@ public class CommunityImageService extends AbstractAttachmentService implements 
 		}
 		return link;
 	}
+	
+	@Transactional(readOnly = false, propagation = Propagation.REQUIRES_NEW)
+	public void saveOrUpdate(ImageLink image) {
+		try { 
+			if (image.getImageId() > 0) {
+				imageLinkDao.update(image); 
+				imageLinkIdCache.remove(image.getLinkId());
+				imageLinkCache.remove(image.getImageId());
+			}
+		} catch (Exception e) {
+			throw new RuntimeError(e);
+		}
+	}
 
 	@Transactional(readOnly = false, propagation = Propagation.REQUIRES_NEW)
 	public ImageLink getImageLink(Image image, boolean createIfNotExist) throws NotFoundException {

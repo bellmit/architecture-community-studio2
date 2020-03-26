@@ -60,4 +60,11 @@ public class JdbcImageLinkDao extends ExtendedJdbcDaoSupport implements ImageLin
 				new SqlParameterValue (Types.NUMERIC, image.getImageId() ));		
 		
 	}
+
+	@Override
+	public void update(ImageLink link) {
+		getExtendedJdbcTemplate().update(getBoundSql("COMMUNITY_WEB.UPDATE_IMAGE_LINK").getSql(),	
+			new SqlParameterValue (Types.INTEGER, link.isPublicShared() ? 1 : 0  ), 
+			new SqlParameterValue (Types.NUMERIC, link.getImageId() ));
+	}
 }

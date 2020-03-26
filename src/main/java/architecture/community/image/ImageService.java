@@ -128,6 +128,8 @@ public interface ImageService {
 	
 	public ImageLink getImageLink( Image image , boolean createIfNotExist  ) throws NotFoundException ;
 	
+	public void saveOrUpdate(ImageLink imageLink) ;
+	
 	public void removeImageLink( Image image ) ;
 	
 	public List<Image> getImages(int objectType, long objectId );
