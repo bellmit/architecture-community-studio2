@@ -13,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -133,7 +134,7 @@ public class DownloadDataController {
 			Image image = imageService.getImageByImageLink(linkId);
 			// checking security ..
 			if (image != null) {
-				if (!isAllowed(image))
+				if ( !thumbnail && !isAllowed(image))
 					throw new UnAuthorizedException(); 
 				InputStream input;
 				String contentType;
@@ -152,11 +153,16 @@ public class DownloadDataController {
 				IOUtils.copy(input, response.getOutputStream());
 				response.flushBuffer();
 			} 
+		} catch (UnAuthorizedException uae ) {
+			response.setStatus( HttpStatus.UNAUTHORIZED.value() );
+			ResourceUtils.notAccessWithPermission(request, response);	
 		} catch (Exception e) {
 			log.warn(e.getMessage(), e);
-			response.setStatus(301);
-			String url = ServletUtils.getContextPath(request) + configService.getApplicationProperty("components.download.images.no-image-url", "/images/no-image.jpg");
-			response.addHeader("Location", url);
+			response.setStatus(HttpStatus.NOT_FOUND.value());
+			if(thumbnail )
+				ResourceUtils.noThumbnails(request, response);
+			else
+				ResourceUtils.notAavaliable(request, response);
 		}
 	}
 
@@ -167,24 +173,19 @@ public class DownloadDataController {
 			@RequestParam(value = "width", defaultValue = "150", required = false) Integer width,
 			@RequestParam(value = "height", defaultValue = "150", required = false) Integer height,
 			HttpServletRequest request, HttpServletResponse response) throws IOException {
-
 		try {
 			if (imageId <= 0 && StringUtils.isNullOrEmpty(filename)) {
 				throw new IllegalArgumentException();
 			}
-			
 			log.debug("name {} decoded {}.", filename, ServletUtils.getEncodedFileName(filename));
 			Image image = imageService.getImage(imageId);
-
 			log.debug("checking equals plain : {} , decoded : {} ",
 					org.apache.commons.lang3.StringUtils.equals(filename, image.getName()),
 					org.apache.commons.lang3.StringUtils.equals(ServletUtils.getEncodedFileName(filename), 
 					image.getName()));
-
 			if (image != null) {
 				if (!isAllowed(image))
 					throw new UnAuthorizedException();
-
 				InputStream input;
 				String contentType;
 				int contentLength;
@@ -200,15 +201,18 @@ public class DownloadDataController {
 				response.setContentType(contentType);
 				response.setContentLength(contentLength);
 				IOUtils.copy(input, response.getOutputStream());
-				
 				response.flushBuffer();
 			}
-
+		} catch (UnAuthorizedException uae ) {
+			response.setStatus( HttpStatus.UNAUTHORIZED.value() );
+			ResourceUtils.notAccessWithPermission(request, response);
 		} catch (Exception e) {
 			log.warn(e.getMessage(), e);
-			response.setStatus(301);
-			String url = ServletUtils.getContextPath(request) + configService.getApplicationProperty("components.download.images.no-image-url", "/images/no-image.jpg");
-			response.addHeader("Location", url);
+			response.setStatus(HttpStatus.NOT_FOUND.value());
+			if(thumbnail )
+				ResourceUtils.noThumbnails(request, response);
+			else
+				ResourceUtils.notAavaliable(request, response);
 		}
 	}
 
@@ -225,7 +229,7 @@ public class DownloadDataController {
 			Attachment attachment = attachmentService.getAttachment(link.getObjectId());
 			// checking security ..
 			if (attachment != null) {
-				if (!isAllowed(attachment))
+				if (!thumbnail && !isAllowed(attachment))
 					throw new UnAuthorizedException();
 				InputStream input;
 				String contentType;
@@ -248,9 +252,7 @@ public class DownloadDataController {
 						}
 					}
 					if (noThumbnail) {
-						response.setStatus(301);
-						String url = configService.getApplicationProperty( "components.download.attachments.no-attachment-url", "/images/no-image.jpg");
-						response.addHeader("Location", url);
+						ResourceUtils.noThumbnails(request, response);
 					}
 				} else {
 					input = attachmentService.getAttachmentInputStream(attachment);
@@ -269,12 +271,13 @@ public class DownloadDataController {
 					response.flushBuffer();
 				}
 			}
-
+		} catch (UnAuthorizedException uae ) {
+			response.setStatus( HttpStatus.UNAUTHORIZED.value() );
+			ResourceUtils.notAccessWithPermission(request, response);
 		} catch (Exception e) {
 			log.warn(e.getMessage(), e);
-			response.setStatus(301);
-			String url = ServletUtils.getContextPath(request) + configService.getApplicationProperty("components.download.images.no-image-url", "/images/no-image.jpg");
-			response.addHeader("Location", url);
+			response.setStatus(HttpStatus.NOT_FOUND.value());
+			ResourceUtils.notAavaliable(request, response);
 		}
 	}
 }

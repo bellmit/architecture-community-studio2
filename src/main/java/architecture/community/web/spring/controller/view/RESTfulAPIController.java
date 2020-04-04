@@ -91,6 +91,8 @@ public class RESTfulAPIController {
 	private boolean isSetApiService() {
 		return apiService != null;
 	}
+	
+	
 
 	@RequestMapping(value = "/{filename:.+}", method = { RequestMethod.POST, RequestMethod.GET })
     public Object api (
@@ -192,7 +194,6 @@ public class RESTfulAPIController {
  			
  			log.debug("Path Pattern Checking (pattern:{}) : {}, match : {}, variables: {}", isPattern, pattern.getPattern(), match, variables);
  			
- 			
  			if( match ) {  
  				StopWatch watch = new StopWatch();
  				Api pageToUse = null;
@@ -237,13 +238,11 @@ public class RESTfulAPIController {
  				break;
  			}
  		}
-		
- 		
+
  		if(result.isSuccess()) {
 			result.setSuccess(false);
 		}
- 		
- 		
+
 		return result;
 	}
 }

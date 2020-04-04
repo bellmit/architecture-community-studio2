@@ -1,9 +1,11 @@
 package architecture.community.services;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
@@ -28,6 +30,7 @@ import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
+import org.springframework.scripting.ScriptCompilationException;
 import org.springframework.scripting.ScriptFactory;
 import org.springframework.scripting.ScriptSource;
 import org.springframework.scripting.groovy.GroovyScriptFactory;
@@ -54,8 +57,8 @@ public class CommunityGroovyService implements InitializingBean, ResourceLoaderA
 	
 	private ApplicationContext applicationContext = null;
 	 
-	private com.google.common.cache.LoadingCache<ScriptServiceKey, Object> scriptServiceCache = null;
-	
+	private com.google.common.cache.LoadingCache<ScriptKey, Object> scriptServiceCache = null;
+
 	@Inject
 	@Qualifier("repository")
 	private Repository repository;
@@ -79,8 +82,8 @@ public class CommunityGroovyService implements InitializingBean, ResourceLoaderA
 	public void initialize(){		
 		log.debug("creating script service cache ...");		
 		scriptServiceCache = CacheBuilder.newBuilder().maximumSize(5000).expireAfterAccess(1, TimeUnit.MINUTES ).build( 
-			new CacheLoader<ScriptServiceKey, Object>(){			
-				public Object load(ScriptServiceKey key) throws Exception {
+			new CacheLoader<ScriptKey, Object>(){			
+				public Object load(ScriptKey key) throws Exception {
 					log.debug("creating new refreshable script service.");		
 					return getService(key.location, key.requiredType);
 				}
@@ -107,37 +110,86 @@ public class CommunityGroovyService implements InitializingBean, ResourceLoaderA
         return scriptDir;
 	}
 	
-	protected ScriptSource createScriptSource(String fileName) {
-		return new ResourceScriptSource( getScriptResource(fileName) );
-	}
 	
 	/**
 	 * return resource.
 	 * @param path
 	 * @return
 	 */
-	protected Resource getScriptResource(String path) { 
+	protected Resource getResource(String path) { 
 		File file = new File(getScriptDir(), path );
 		FileSystemResource resource = new FileSystemResource( file ) ;
 		return resource; 
 	}
 	
 	
-	protected ScriptSource getScriptSource( String path) {
+	public ScriptSource getScriptSource( String scriptSourceLocator) {
 		synchronized (this.scriptSourceCache) {
-			ScriptSource scriptSource = this.scriptSourceCache.get(path);
+			ScriptSource scriptSource = this.scriptSourceCache.get(scriptSourceLocator);
 			if (scriptSource == null) {
-				scriptSource = createScriptSource(path);
-				this.scriptSourceCache.put(path, scriptSource);
+				scriptSource = new ResourceScriptSource( getResource(scriptSourceLocator) ) ;
+				this.scriptSourceCache.put(scriptSourceLocator, scriptSource);
 			}
 			return scriptSource;
 		}
 	} 
 	
+	private final Map<String, GroovyScriptFactory> groovyScriptFactories = new ConcurrentHashMap<String, GroovyScriptFactory>(100);
+	
+	public GroovyScriptFactory getGroovyScriptFactory(String scriptSourceLocator, boolean autowire) {
+		GroovyScriptFactory factory = groovyScriptFactories.get(scriptSourceLocator);
+		if( factory == null) {
+			factory = new GroovyScriptFactory(scriptSourceLocator);
+			if( autowire)
+				applicationContext.getAutowireCapableBeanFactory().autowireBean(factory);
+			groovyScriptFactories.put(scriptSourceLocator, factory);
+		}
+		return factory;
+	}
+	
+	public GroovyScriptFactory getGroovyScriptFactory(String scriptSourceLocator) {
+		return getGroovyScriptFactory(scriptSourceLocator, false);
+	}
+	
+
+	public Class<?> getScriptedObjectType(ScriptSource scriptSource, GroovyScriptFactory factory) throws ScriptCompilationException, IOException {
+		return factory.getScriptedObjectType(scriptSource);
+	}
+	
+	public Object getScriptedObject(ScriptSource scriptSource, Class<?> handlerType, GroovyScriptFactory factory, boolean autowire) throws ScriptCompilationException, IOException {
+		Object object = factory.getScriptedObject(scriptSource, handlerType);
+		if( autowire)
+			applicationContext.getAutowireCapableBeanFactory().autowireBean(object);
+		return object;
+	}
+
+	
+	public <T> T getService( String scriptSourceLocator, Class<T> requiredType, boolean usingCache, boolean autowire) { 
+		GroovyScriptFactory factory = getGroovyScriptFactory(scriptSourceLocator);
+		AutowireCapableBeanFactory beanFactory = applicationContext.getAutowireCapableBeanFactory();
+		beanFactory.autowireBean(factory); 
+		
+		ScriptSource scriptSource = new ResourceScriptSource( getResource(scriptSourceLocator) ); 
+		try {  
+			Class<?> scriptSourceClassType = factory.getScriptedObjectType(scriptSource);
+			T obj = (T)factory.getScriptedObject(scriptSource, requiredType);	
+			
+			if( autowire)
+				applicationContext.getAutowireCapableBeanFactory().autowireBean(obj);
+			
+			return obj;
+		} catch (Exception e) { 
+			log.error(e.getMessage(), e);
+		}
+		return null;
+	}
+	
+	
+	
 	public <T> T getService(String locator, Class<T> requiredType, boolean refreshable ) {	
 		if( refreshable )
 			try {
-				ScriptServiceKey key = new ScriptServiceKey( locator, requiredType );
+				ScriptKey key = new ScriptKey( locator, requiredType );
 				T service =  (T) scriptServiceCache.getIfPresent(key);
 				if( service == null )
 					service = (T) scriptServiceCache.get(key);
@@ -149,13 +201,16 @@ public class CommunityGroovyService implements InitializingBean, ResourceLoaderA
 			return getService(locator, requiredType);
 	} 
 	
-	public <T> T getService( String scriptSourceLocator, Class<T> requiredType) {
+	
+	
+	
+	public <T> T getService( String scriptSourceLocator, Class<T> requiredType) { 
 		GroovyScriptFactory factory = getGroovyScriptFactory(scriptSourceLocator);
 		AutowireCapableBeanFactory beanFactory = applicationContext.getAutowireCapableBeanFactory();
 		beanFactory.autowireBean(factory); 
-		ResourceScriptSource script = new ResourceScriptSource( getScriptResource(scriptSourceLocator) ); 
-		try { 
-			T obj = (T)factory.getScriptedObject(script, requiredType);
+		ScriptSource scriptSource = new ResourceScriptSource( getResource(scriptSourceLocator) ); 
+		try {  
+			T obj = (T)factory.getScriptedObject(scriptSource, requiredType);
 			applicationContext.getAutowireCapableBeanFactory().autowireBean(obj);
 			return obj;
 		} catch (Exception e) { 
@@ -170,7 +225,7 @@ public class CommunityGroovyService implements InitializingBean, ResourceLoaderA
 		GroovyScriptFactory factory = getGroovyScriptFactory(scriptSourceLocator);
 		AutowireCapableBeanFactory beanFactory = applicationContext.getAutowireCapableBeanFactory();
 		beanFactory.autowireBean(factory); 
-		ResourceScriptSource script = new ResourceScriptSource(getScriptResource(scriptSourceLocator));
+		ResourceScriptSource script = new ResourceScriptSource(getResource(scriptSourceLocator));
 		RefreshableScriptTargetSource rsts = getRefreshableScriptTargetSource(beanFactory, "groovy_script_servcie____", factory , script, false); 
 		ProxyFactory proxyFactory = new ProxyFactory();
 		proxyFactory.setTargetSource(rsts);
@@ -204,18 +259,15 @@ public class CommunityGroovyService implements InitializingBean, ResourceLoaderA
 		return rsts;
 	} 
 	
-	private GroovyScriptFactory getGroovyScriptFactory(String scriptSourceLocator) {
-		GroovyScriptFactory factory = new GroovyScriptFactory(scriptSourceLocator); 
-		return factory;
-	}
+
 	
-	static class ScriptServiceKey implements Serializable {
+	static class ScriptKey implements Serializable {
 		
 		String location ;
 		Class<?> requiredType ; 
 		boolean refreshable;
 		
-		public ScriptServiceKey(String scriptSourceLocator, Class<?> requiredType) { 
+		public ScriptKey(String scriptSourceLocator, Class<?> requiredType) { 
 			this.location = scriptSourceLocator;
 			this.requiredType = requiredType;
 			this.refreshable = true;
@@ -253,7 +305,7 @@ public class CommunityGroovyService implements InitializingBean, ResourceLoaderA
 				return false;
 			if (getClass() != obj.getClass())
 				return false;
-			ScriptServiceKey other = (ScriptServiceKey) obj;
+			ScriptKey other = (ScriptKey) obj;
 			if (location == null) {
 				if (other.location != null)
 					return false;
@@ -262,7 +314,7 @@ public class CommunityGroovyService implements InitializingBean, ResourceLoaderA
 			return true;
 		}
 
-		public boolean equals(ScriptServiceKey obj) {
+		public boolean equals(ScriptKey obj) {
 			if(StringUtils.equals(location, obj.location) && requiredType == obj.requiredType)
 				return true;
 			return true;

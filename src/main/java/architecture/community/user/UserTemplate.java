@@ -74,6 +74,8 @@ public class UserTemplate extends PropertyAwareSupport implements User, Serializ
 			throw new NullPointerException(CommunityLogLocalizer.getMessage("010015"));
 		
 		this.username = user.getUsername();
+		this.firstName = user.getFirstName();
+		this.lastName = user.getLastName();
 		this.name = user.getName();
 		this.email = user.getEmail();
 		this.nameVisible = user.isNameVisible();
