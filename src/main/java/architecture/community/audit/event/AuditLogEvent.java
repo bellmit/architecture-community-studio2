@@ -67,6 +67,7 @@ public class AuditLogEvent extends ApplicationEvent  {
 		private String resource ;
 		private String action;
 		private String code ;
+		private double totalTimeSeconds;
 		
 		public Builder (Object source) {
 			this.request = null;
@@ -144,6 +145,11 @@ public class AuditLogEvent extends ApplicationEvent  {
 		
 		public Builder objectType (int objectType) {
 			event.objectType = objectType;
+			return this;
+		}
+		
+		public Builder totalTimeSeconds(double totalTimeSeconds) {
+			this.totalTimeSeconds = totalTimeSeconds;
 			return this;
 		}
 	}

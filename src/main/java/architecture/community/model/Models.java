@@ -4,15 +4,16 @@ import architecture.community.announce.Announce;
 import architecture.community.attachment.Attachment;
 import architecture.community.category.Category;
 import architecture.community.comment.Comment;
+import architecture.community.i18n.I18nText;
 import architecture.community.image.Image;
 import architecture.community.image.LogoImage;
 import architecture.community.navigator.menu.Menu;
 import architecture.community.navigator.menu.MenuItem;
 import architecture.community.page.Page;
 import architecture.community.page.api.Api;
-import architecture.community.streams.Streams;
 import architecture.community.streams.StreamMessage;
 import architecture.community.streams.StreamThread;
+import architecture.community.streams.Streams;
 import architecture.community.tag.ContentTag;
 import architecture.community.user.AvatarImage;
 import architecture.community.user.Company;
@@ -39,6 +40,7 @@ public enum Models {
 	STREAMS_THREAD(21, StreamThread.class),
 	STREAMS_MESSAGE(22, StreamMessage.class),
 	API(30, Api.class),
+	I18N(35, I18nText.class),
 	ANNOUNCE(41, Announce.class)
 	;
 	
