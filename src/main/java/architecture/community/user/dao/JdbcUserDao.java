@@ -112,8 +112,8 @@ public class JdbcUserDao extends ExtendedJdbcDaoSupport implements UserDao {
 		}
 		UserTemplate user = null;
 		try {
-			user = getExtendedJdbcTemplate().queryForObject(getBoundSql("COMMUNITY_USER.SELECT_USER_BY_ID").getSql(),
-					userRowMapper, new SqlParameterValue(Types.NUMERIC, userId));
+			user = getExtendedJdbcTemplate().queryForObject(getBoundSql("COMMUNITY_USER.SELECT_USER_BY_ID").getSql(), userRowMapper, new SqlParameterValue(Types.NUMERIC, userId));
+			user.setProperties(getUserProperties(user.getUserId()));
 		} catch (IncorrectResultSizeDataAccessException e) {
 			if (e.getActualSize() > 1) {
 				logger.warn(CommunityLogLocalizer.format("010008", userId));
@@ -131,9 +131,8 @@ public class JdbcUserDao extends ExtendedJdbcDaoSupport implements UserDao {
 		String emailMatch = email.replace('*', '%');
 		UserTemplate user = null;
 		try {
-			user = getExtendedJdbcTemplate().queryForObject(getBoundSql("COMMUNITY_USER.SELECT_USER_BY_EMAIL").getSql(),
-					userRowMapper, new SqlParameterValue(Types.VARCHAR, emailMatch));
-
+			user = getExtendedJdbcTemplate().queryForObject(getBoundSql("COMMUNITY_USER.SELECT_USER_BY_EMAIL").getSql(), userRowMapper, new SqlParameterValue(Types.VARCHAR, emailMatch));
+			user.setProperties(getUserProperties(user.getUserId()));
 		} catch (IncorrectResultSizeDataAccessException e) {
 			if (e.getActualSize() > 1) {
 				logger.warn(CommunityLogLocalizer.format("010010", email));
@@ -182,8 +181,7 @@ public class JdbcUserDao extends ExtendedJdbcDaoSupport implements UserDao {
 		if (template.getStatus() == null || template.getStatus() == User.Status.NONE)
 			template.setStatus(User.Status.REGISTERED);
 
-		boolean useLastNameFirstName = !StringUtils.isNullOrEmpty(template.getFirstName())
-				&& !StringUtils.isNullOrEmpty(template.getLastName());
+		boolean useLastNameFirstName = !StringUtils.isNullOrEmpty(template.getFirstName()) && !StringUtils.isNullOrEmpty(template.getLastName());
 
 		try {
 			Date now = new Date();
@@ -217,9 +215,8 @@ public class JdbcUserDao extends ExtendedJdbcDaoSupport implements UserDao {
 			return null;
 		UserTemplate user = null;
 		try {
-			user = getExtendedJdbcTemplate().queryForObject(
-					getBoundSql("COMMUNITY_USER.SELECT_USER_BY_USERNAME").getSql(), userRowMapper,
-					new SqlParameterValue(Types.VARCHAR, username));
+			user = getExtendedJdbcTemplate().queryForObject( getBoundSql("COMMUNITY_USER.SELECT_USER_BY_USERNAME").getSql(), userRowMapper, new SqlParameterValue(Types.VARCHAR, username));
+			user.setProperties(getUserProperties(user.getUserId()));
 		} catch (EmptyResultDataAccessException e) {
 			logger.warn(CommunityLogLocalizer.format("010009", username), e);
 		} catch (DataAccessException e) {
@@ -280,7 +277,7 @@ public class JdbcUserDao extends ExtendedJdbcDaoSupport implements UserDao {
 	}
 
 	public void updateUserProperty(User user) {
-
+		setUserProperties(user.getUserId(), user.getProperties()); 
 	}
 
 	public User updateUser(User user) {
@@ -301,8 +298,7 @@ public class JdbcUserDao extends ExtendedJdbcDaoSupport implements UserDao {
 					new SqlParameterValue(Types.TIMESTAMP,
 							userToUse.getModifiedDate() != null ? userToUse.getModifiedDate() : new Date()),
 					new SqlParameterValue(Types.NUMERIC, userToUse.getUserId()));
-			setUserProperties(user.getUserId(), user.getProperties());
-
+			setUserProperties(user.getUserId(), user.getProperties()); 
 		} catch (DataAccessException e) {
 			String message = "Failed to update user.";
 			logger.error(message, e);
