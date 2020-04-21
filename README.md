@@ -36,7 +36,16 @@
 -- ALLOW ROLE_SYSTEM, ROLE_ADMINISTRATOR, ROLE_DEVELOPER
 /secure/display/* , /secure/studio/*
 
+
+## STREAMS
+
+/data/streams/me
+
+/data/streams/me/files/
+
+/data/streams/me/photos/upload
  
+
 
 ## Libraries used in theme: 
 
@@ -52,7 +61,7 @@ Touch enabled, responsive and fully customizable.
 ## Opensource
 | Opensource | Version |
 |------------|---------|
-| architecture-ee | 5.0.5-RELEASE |
+| architecture-ee | 5.1.2-RELEASE |
 | springframework | 4.3.23.RELEASE |
 | springframework security | 4.2.12.RELEASE|
 | springframework oauth | 1.5.6 |
