@@ -1,12 +1,11 @@
 # architecture-community-studio
 ## 소개
 
-자바기반의 웹 프로그램 빌더 
+자바 기반의 다이나믹 웹 스튜디오 
 
-- 페이지 및 REST API 생성 및 배포 서비스 
-- ROLE 기반의 접근 제어 서비스 
-- 사용자 서비스 
-
+- 실시간 웹 페이지 및 REST API 생성 및 배포
+- ROLE 기반의 접근 제어
+- 사용자 관리
 
 ------
 ## Getting Started
