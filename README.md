@@ -1,7 +1,7 @@
 # architecture-community-studio
 ## 소개
 
-자바 기반의 다이나믹 웹 스튜디오 
+자바 기반의 웹 페이지/API 스튜디오 
 
 - 실시간 웹 페이지 및 REST API 생성 및 배포
 - ROLE 기반의 접근 제어
@@ -57,7 +57,7 @@ Touch enabled, responsive and fully customizable.
 
 
 
-## Opensource
+## Opensource java libs
 | Opensource | Version |
 |------------|---------|
 | architecture-ee | 5.1.2-RELEASE |
@@ -67,6 +67,11 @@ Touch enabled, responsive and fully customizable.
 | FasterXML | 2.9.9 |
 | javax.mail | 1.5.6 |
 | Sitemesh| 3.0.1 |
+
+## Opensource Project
+
+GrapesJS https://github.com/artf/grapesjs
+
 
 ## Database 
 MySQL 8.x
